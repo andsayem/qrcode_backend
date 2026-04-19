@@ -1,0 +1,197 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
+:root {
+    --data-color-primary: #a8237f;
+    --data-color-secondary: #3b3b3b;
+    --data-color-gray: #707070;
+    --data-light-gray: #f0f0f0;
+    --data-color-hover: #861564;
+    --border-color: #a8237f;
+    --color-success: #5ec08e;
+}
+body {
+    font-family: "Roboto", sans-serif;
+}
+.bg-primary {
+    background-color: var(--data-color-primary) !important;
+}
+.bg-secondary {
+    background-color: var(--data-color-secondary);
+}
+.btn-primary {
+    background-color: var(--data-color-primary) !important;
+    border-color: var(--data-color-primary) !important;
+}
+.btn-primary:hover {
+    background-color: var(--data-color-hover) !important;
+    border-color: var(--data-color-hover) !important;
+}
+.text-black {
+    color: #000;
+}
+.text-gray {
+    color: var(--data-color-gray);
+}
+.text-success {
+    color: var(--color-success) !important;
+}
+.switch-img {
+    border-color: var(--data-color-primary) !important;
+    border: 3px solid;
+    border-radius: 12px;
+}
+.card-body {
+    padding: 30px 25px;
+}
+.card-body h5 {
+    font-size: 20px;
+    font-weight: 700;
+}
+.footer {
+    font-size: 14px;
+    background-color: #1c0d1c;
+}
+.card-text {
+    font-size: 13px;
+}
+.nav-link {
+    padding-left: 0;
+    padding-right: 0;
+}
+.text-muted {
+    color: #bdbcc1 !important;
+}
+.info-ul li {
+    color: var(--data-color-gray);
+    font-size: 13px;
+    padding-bottom: 8px;
+}
+.text-between p {
+    width: 25%;
+    text-align: center;
+    border-bottom: 1px solid #b4b4b4;
+    line-height: 0.1em;
+    margin: 20px 0 20px;
+}
+.text-between span {
+    background: #fff;
+    padding: 0 10px;
+    font-size: 14px;
+}
+.font-12 {
+    font-size: 12px;
+}
+.font-13 {
+    font-size: 13px;
+}
+.font-14 {
+    font-size: 14px;
+}
+.form-label {
+    color: #414141;
+    font-size: 14px;
+}
+.ssg {
+    border-radius: 12px;
+    box-shadow: 0px 1px 7px -3px #8d8d8d;
+}
+.ssg .form-control {
+    box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.08);
+    border-color: var(--data-light-gray);
+    border-radius: 6px;
+    height: 48px;
+    line-height: 48px;
+}
+.ssg .form-control:focus {
+    border-width: 0 0 2px 0;
+    border-color: var(--border-color);
+    box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.08);
+}
+.ssg .btn-primary {
+    height: 48px;
+    border-radius: 6px;
+    letter-spacing: 0.8px;
+    font-weight: 500;
+    font-size: 14px;
+}
+.ssg .btn-primary:focus {
+    box-shadow: none;
+}
+.ssg-div {
+    margin-top: 40px;
+}
+.ssg-height {
+    height: calc(100vh - 106px);
+}
+.ssg-height-inner {
+    height: calc(100vh - 194px);
+}
+.header-shadow {
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.16);
+}
+.header-shadow .btn-outline-primary {
+    border-color: var(--data-color-primary) !important;
+    color: var(--data-color-primary) !important;
+    height: 38px;
+    font-size: 14px;
+    line-height: 25px;
+    font-weight: 500;
+}
+.header-shadow .btn-outline-primary:hover {
+    background-color: var(--data-color-hover) !important;
+    border-color: var(--data-color-hover) !important;
+    color: #fff !important;
+}
+
+@media screen and (max-height: 750px) {
+    .logo {
+        margin-top: 20px;
+    }
+    .ssg-height {
+        height: auto;
+    }
+}
+
+@media screen and (max-width: 1080px) {
+    .ssg {
+        width: auto;
+    }
+    .ssg-height {
+        height: auto;
+    }
+    .logo {
+        margin-top: 20px;
+    }
+    .ssg-height-inner {
+        height: auto;
+        margin-top: 40px;
+    }
+}
+@media screen and (max-width: 768px) {
+    .ssg-left {
+        order: 2;
+        margin-top: 20px;
+    }
+    .warrenty {
+        margin-bottom: 30px;
+    }
+    .warrenty .warrenty-col {
+        margin-bottom: 15px;
+    }
+}
+@media screen and (max-width: 425px) {
+    .switch-img {
+        width: 70%;
+        border-width: 2px;
+        padding: 5px;
+    }
+    .font-14 {
+        font-size: 12px !important;
+    }
+    .logo {
+        width: 100px;
+        margin-top: 20px;
+    }
+    .footer {
+        font-size: 12px;
+    }
+}

@@ -1,0 +1,10 @@
+ALTER TABLE `qrcode`.`settings` DROP COLUMN `point_rate`;
+
+ALTER TABLE `qrcode`.`technicians` DROP COLUMN `country`; 
+
+ALTER TABLE `qrcode`.`technicians` ADD COLUMN `country_id` INT DEFAULT 1 NULL AFTER `user_id`; 
+
+
+INSERT INTO `qrcode`.`permission_modules` (`id`, `title`) VALUES ('15', 'Notification'); 
+INSERT INTO `qrcode`.`permissions` (`id`, `name`, `guard_name`, `module_id`, `created_at`, `updated_at`) VALUES ('188', 'notifications', 'web', '15', '2024-03-13 14:59:49', '2024-03-13 14:59:51'); 
+ 

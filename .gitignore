@@ -1,0 +1,36 @@
+# Node
+/node_modules
+/npm-debug.log
+/yarn-error.log
+
+# Laravel
+/vendor
+/public/hot
+/public/storage
+/storage/*.key
+/storage/logs
+/storage/framework/cache
+/storage/framework/sessions
+/storage/framework/views
+
+# Environment
+.env
+.env.backup
+
+# IDE & OS
+.idea/
+/.vagrant
+.phpunit.result.cache
+
+# Homestead
+Homestead.json
+Homestead.yaml
+
+# Custom uploads (generated files)
+/public/uploads/code_generations/
+
+# Archives
+*.zip
+
+# Database (if locally generated)
+/mysql

@@ -1,0 +1,29 @@
+SELECT 
+    u.id AS SL,
+    u.name AS Electrician_Name,
+    u.email AS Mobile_Number,
+    gt.thana AS Thana,
+    gd.district AS District,
+    gdv.name AS Division,
+    
+    -- Points per month
+    SUM(CASE WHEN DATE_FORMAT(up.created_at, '%Y-%m') = '2025-08' THEN up.point ELSE 0 END) AS `Points_in_Aug_25`,
+    SUM(CASE WHEN DATE_FORMAT(up.created_at, '%Y-%m') = '2025-09' THEN up.point ELSE 0 END) AS `Points_in_Sept_25`,
+    SUM(CASE WHEN DATE_FORMAT(up.created_at, '%Y-%m') = '2025-10' THEN up.point ELSE 0 END) AS `Points_in_Oct_25`,
+    SUM(CASE WHEN DATE_FORMAT(up.created_at, '%Y-%m') = '2025-11' THEN up.point ELSE 0 END) AS `Points_in_Nov_25`,
+    SUM(CASE WHEN DATE_FORMAT(up.created_at, '%Y-%m') = '2025-12' THEN up.point ELSE 0 END) AS `Points_in_Dec_25`
+
+FROM technicians t
+JOIN users u
+    ON u.id = t.user_id
+LEFT JOIN geo_divisions gdv
+    ON gdv.id = t.division_id
+LEFT JOIN geo_district gd
+    ON gd.id = t.district_id
+LEFT JOIN geo_thana gt
+    ON gt.id = t.upazilla_id
+LEFT JOIN user_points up
+    ON up.user_id = t.user_id
+
+GROUP BY u.id, u.name, u.email, gt.thana, gd.district, gdv.name
+ORDER BY u.name;
