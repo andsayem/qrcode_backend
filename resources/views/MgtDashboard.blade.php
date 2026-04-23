@@ -1,14 +1,13 @@
 @extends('backend.layouts.app')
 
 {{-- Topbar --}}
-@section('topbar')
-    @include('backend.layouts.topbar')
-@endsection
+ 
+    @extends('backend.layouts.topbar')
+ 
 
-{{-- Sidebar --}}
-@section('sidebar')
-    @include('backend.layouts.leftsidebar')
-@endsection
+{{-- Sidebar --}} 
+    @extends('backend.layouts.leftsidebar')
+ 
 
 @section('content')
 
@@ -73,7 +72,7 @@
                         <div class="col-md-2">
                             <label class="filter-label">Division</label>
                             <select name="division" class="form-select custom-control">
-                                <option value="">Division</option>
+                                <option value="">All Division</option>
                                 @foreach($divisions as $div)
                                     <option value="{{ $div->id }}" {{ request('division') == $div->id ? 'selected' : '' }}>
                                         {{ $div->name }}

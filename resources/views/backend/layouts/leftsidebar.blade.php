@@ -28,6 +28,9 @@
                     <li class="{{ Route::currentRouteName() == 'admin.dashboard' ? 'active' : '' }}"><a
                             href="{{ route('admin.dashboard') }}"><i class="icon-home"></i><span>Dashboard</span></a></li>
 
+                               <li class="{{ Route::currentRouteName() == 'admin.mgtdashboard' ? 'active' : '' }}"><a
+                            href="{{ route('admin.mgtdashboard') }}"><i class="icon-rocket"></i><span>Management Dashboard</span></a></li>        
+
                     @if (count(array_intersect(['user-list', 'role-list'], $allPermissionNames)) > 0)
                         <li
                             class="{{ in_array(Route::currentRouteName(), ['admin.users.index', 'admin.users.create', 'admin.users.edit', 'admin.roles.index', 'admin.roles.create', 'admin.roles.edit']) ? 'active' : '' }}">
