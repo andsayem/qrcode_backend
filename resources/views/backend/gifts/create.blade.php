@@ -64,7 +64,7 @@
             <div class="form-group">
                 <label>Gift Type</label>
                 <select name="gift_type" class="form-control" required>
-                    <option value="cash_payment_gateway">Payment Gateway</option>
+                    <option value="payment_gateway">Payment Gateway</option>
                     <option value="physical_gift">Physical Gift</option>
                 </select>
             </div>
