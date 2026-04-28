@@ -217,6 +217,12 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
 
     Route::get('/show/{id}', [GiftTransactionController::class, 'show'])
         ->name('transactions.show');
+    
+    Route::get('/export', [GiftTransactionController::class, 'export'])->name('transactions.export');
+
+    Route::post('/transactions/bulk-approve', [GiftTransactionController::class, 'bulkApprove'])->name('transactions.bulk_approve');
+
+    Route::post('/transactions/bulk-send', [GiftTransactionController::class, 'bulkSend'])->name('transactions.bulk_send');
 });
 });
 

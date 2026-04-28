@@ -277,7 +277,7 @@ class UserController extends Controller
         if($item->status==1){
             $techStatus = 'paid';
         }else{
-            $techStatus = 'peending';
+            $techStatus = 'pending';
         }
         $list = collect($redeems);
     
