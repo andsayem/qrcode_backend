@@ -51,12 +51,21 @@
                 <input type="text" name="gift_name" class="form-control" required>
             </div>
 
+            <!-- Policy Type -->
+            <div class="form-group">
+                <label>Policy Type</label>
+                <select name="policy_type" class="form-control" required>
+                    <option value="instant">Instant</option>
+                    <option value="year_end">Year End</option>
+                </select>
+            </div>
+
             <!-- Gift Type -->
             <div class="form-group">
                 <label>Gift Type</label>
                 <select name="gift_type" class="form-control" required>
-                    <option value="instant">Instant</option>
-                    <option value="year_end">Year End</option>
+                    <option value="payment_gateway">Payment Gateway</option>
+                    <option value="physical_gift">Physical Gift</option>
                 </select>
             </div>
 

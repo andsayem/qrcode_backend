@@ -20,6 +20,7 @@ use App\Http\Controllers\Reports\MonthlyVerifiedProductPieChartController;
 use App\Http\Controllers\Reports\MonthWiseEarningsSettlementController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Backend\TechnicianNomineeController;
 use App\Http\Controllers\Backend\Gift\GiftPolicyController;
 use App\Http\Controllers\Backend\Gift\GiftController;
@@ -216,6 +217,12 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
 
     Route::get('/show/{id}', [GiftTransactionController::class, 'show'])
         ->name('transactions.show');
+    
+    Route::get('/export', [GiftTransactionController::class, 'export'])->name('transactions.export');
+
+    Route::post('/transactions/bulk-approve', [GiftTransactionController::class, 'bulkApprove'])->name('transactions.bulk_approve');
+
+    Route::post('/transactions/bulk-send', [GiftTransactionController::class, 'bulkSend'])->name('transactions.bulk_send');
 });
 });
 

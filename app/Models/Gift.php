@@ -14,6 +14,7 @@ class Gift extends Model
         'point_slab',
         'gift_name',
         'image',
+        'policy_type',
         'gift_type',
         'is_point_cut',
     ];

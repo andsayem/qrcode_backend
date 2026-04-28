@@ -40,7 +40,8 @@ class GiftController extends Controller
             'policy_id'     => 'required|exists:gift_policies,id',
             'point_slab'    => 'required|integer',
             'gift_name'     => 'required|string|max:255',
-            'gift_type'     => 'required|in:instant,year_end',
+            'policy_type'     => 'required|in:instant,year_end',
+            'gift_type' => 'required|in:payment_gateway,physical_gift',
             'is_point_cut'  => 'nullable|boolean',
             'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp',
         ]);
@@ -49,6 +50,7 @@ class GiftController extends Controller
             'policy_id',
             'point_slab',
             'gift_name',
+            'policy_type',
             'gift_type',
             'is_point_cut'
         ]);
@@ -100,7 +102,8 @@ class GiftController extends Controller
             'policy_id'     => 'required|exists:gift_policies,id',
             'point_slab'    => 'required|integer',
             'gift_name'     => 'required|string|max:255',
-            'gift_type'     => 'required|in:instant,year_end',
+            'policy_type'     => 'required|in:instant,year_end',
+            'gift_type' => 'required|in:payment_gateway,physical_gift',
             'is_point_cut'  => 'nullable|boolean',
             'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp',
         ]);
@@ -109,6 +112,7 @@ class GiftController extends Controller
             'policy_id',
             'point_slab',
             'gift_name',
+            'policy_type',
             'gift_type',
             'is_point_cut'
         ]);
