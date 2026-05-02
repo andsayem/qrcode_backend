@@ -60,7 +60,7 @@
                             @endforeach
                         </select>
                     </div>
-            
+
                     {{-- POLICY --}}
                     <div class="col-md-3 mb-3">
                         <select name="policy_id" class="form-control">
@@ -130,8 +130,9 @@
 
             {{-- ================= TABLE ================= --}}
             @php
-                $hasBulkAction = ($status == 0 && $transactions->count() > 0) || 
-                                 ($status == 1 && $transactions->contains('delivery_status', 'not_sent'));
+                $hasBulkAction =
+                    ($status == 0 && $transactions->count() > 0) ||
+                    ($status == 1 && $transactions->contains('delivery_status', 'not_sent'));
             @endphp
             <div class="table-responsive">
                 <table class="table table-hover table-striped m-b-0">
@@ -150,19 +151,19 @@
 
                             </th>
                             @if ($hasBulkAction)
-                            <th> 
-                                @if ($status !=2 && $status != 'sent')
-                                <label><input type="checkbox" id="checkAll">Check All</label> {{-- Check All Checkbox --}}
-                                <button type="button" id="bulk-action-btn" onclick="bulkAction()"
-                                    class="btn btn-sm px-3 btn-info">
-                                    @if ($status == 0)
-                                        Bulk Approve
-                                    @elseif($status == 1)
-                                        Bulk Send
+                                <th>
+                                    @if ($status != 2 && $status != 'sent')
+                                        <label><input type="checkbox" id="checkAll">Check All</label> {{-- Check All Checkbox --}}
+                                        <button type="button" id="bulk-action-btn" onclick="bulkAction()"
+                                            class="btn btn-sm px-3 btn-info">
+                                            @if ($status == 0)
+                                                Bulk Approve
+                                            @elseif($status == 1)
+                                                Bulk Send
+                                            @endif
+                                        </button>
                                     @endif
-                                </button>
-                                @endif
-                            </th>
+                                </th>
                             @endif
                         </tr>
                     </thead>
@@ -272,15 +273,15 @@
 
                                 </td>
                                 @if ($hasBulkAction)
-                                <td>
-                                    @if ($status !=2)
-                                    @if ($item->delivery_status == 'not_sent')
-                                    <input type="checkbox" name="transaction_ids[]" value="{{ $item->id }}"
-                                        class="checkbox">
-                                    @endif
-                                    @endif
-                                    
-                                </td>
+                                    <td>
+                                        @if ($status != 2)
+                                            @if ($item->delivery_status == 'not_sent')
+                                                <input type="checkbox" name="transaction_ids[]" value="{{ $item->id }}"
+                                                    class="checkbox">
+                                            @endif
+                                        @endif
+
+                                    </td>
                                 @endif
 
                             </tr>
@@ -372,16 +373,16 @@
                     });
                 };
 
-
-            });
-            // ================= AUTO FILTER ON REQUEST STATUS =================
-            $('#request_status').on('change', function() {
+                // ================= AUTO FILTER ON REQUEST STATUS =================
+                $('#request_status').on('change', function() {
 
 
-                let form = $(this).closest('form');
+                    let form = $(this).closest('form');
 
-                // submit form automatically
-                form.submit();
+                    // submit form automatically
+                    form.submit();
+
+                });
 
             });
         </script>

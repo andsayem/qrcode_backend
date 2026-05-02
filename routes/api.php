@@ -3,6 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Backend\TechnicianNomineeController;
+use App\Http\Controllers\Backend\Gift\GiftTransactionController;
+use App\Http\Controllers\Api\GiftController;
+use App\Http\Controllers\Api\GiftTransactionController as ApiGiftTransactionController;
 
 // Route::get('/login', function(){
 //     print_r('Test');
@@ -59,6 +62,10 @@ Route::group([
     Route::resource('settings', App\Http\Controllers\Api\SettingsAPIController::class);
     Route::resource('notifications', App\Http\Controllers\Api\NotificationAPIController::class);
     Route::post('cancel_redeem/{id}', [App\Http\Controllers\Api\UserRedeemRequestAPIController::class, 'cancelRedeem']);
+    // Route::post('/redeem', [GiftTransactionController::class, 'redeemApi']);
+    Route::get('/gifts', [GiftController::class, 'index']);
+    Route::get('/transactions', [ApiGiftTransactionController::class,'index']);
+    Route::get('/transaction_details/{id}', [ApiGiftTransactionController::class,'transactionDetails']);
 
     // Technician Nominee API
     Route::prefix('technician-nominee')->group(function () {
