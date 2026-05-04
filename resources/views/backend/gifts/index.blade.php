@@ -83,7 +83,7 @@
 
                             <!-- Gift Type -->
                             <td>
-                                @if($gift->gift_type == 'instant')
+                                @if($gift->policy_type == 'instant')
                                     <span class="badge badge-success">Instant</span>
                                 @else
                                     <span class="badge badge-warning">Year End</span>

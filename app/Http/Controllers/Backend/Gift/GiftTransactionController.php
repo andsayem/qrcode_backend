@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\GiftTransaction;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\GiftTransactionsExport;
+use App\Models\Gift;
+use App\Models\Technician;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GiftTransactionController extends Controller
 {
@@ -45,11 +49,10 @@ class GiftTransactionController extends Controller
 
         // Request Status filter (default to pending)
         $status = $request->get('request_status', 0);
-        
+
         if ($status == 'sent') {
             $query->where('delivery_status', 'sent');
-        } 
-        else {
+        } else {
             $query->where('request_status', $status);
         }
 
@@ -76,6 +79,12 @@ class GiftTransactionController extends Controller
     public function export(Request $request)
     {
         $filters = $request->all();
+
+        // Default to pending (0) if no status is provided
+        if (!isset($filters['request_status'])) {
+            $filters['request_status'] = 0;
+        }
+
         return Excel::download(new GiftTransactionsExport($filters), 'gift_transactions.xlsx');
     }
     /**
@@ -242,4 +251,119 @@ class GiftTransactionController extends Controller
         ]);
     }
 
+    public function redeemApi(Request $request)
+    {
+        $request->validate([
+            'gift_id' => 'required|exists:gifts,id',
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        // $user = auth()->user();
+        $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
+        $gift = Gift::findOrFail($request->gift_id);
+
+        $technician = Technician::where('user_id', $user->id)->first();
+
+        if (!$technician) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Technician profile not found.'
+            ], 404);
+        }
+
+        // $currentPoints = UserPoint::where('user_id', $user->id)->sum('point');
+
+        // dd([
+        //     'user_points' => $currentPoints,
+        //     'required_points' => $gift->point_slab
+        // ]);
+        // INSTANT Gift Logic (Points are "locked" instead of "cut")
+        if ($gift->policy_type === 'instant') {
+            // Calculate total points locked by all previous instant gift redemptions (Pending or Approved)
+            $totalLockedPoints = GiftTransaction::join('gifts', 'gift_transactions.gift_id', '=', 'gifts.id')
+                ->where('gift_transactions.user_id', $user->id)
+                ->where('gifts.policy_type', 'instant')
+                ->whereIn('gift_transactions.request_status', [0, 1]) 
+                ->sum('gifts.point_slab');
+
+            $availableForInstant = $technician->current_point - $totalLockedPoints;
+
+            if ($availableForInstant < $gift->point_slab) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Insufficient available points. You have {$availableForInstant} points free for instant gifts."
+                ], 400);
+            }
+        }
+
+        //  YEAR-END
+        if ($gift->policy_type === 'year_end') {
+
+            // once per year
+            $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
+                ->where('gift_id', $gift->id)
+                ->whereYear('requested_at', now()->year)
+                ->whereIn('request_status', [0, 1])
+                ->exists();
+
+            if ($alreadyRedeemed) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This year-end gift has already been requested this year.'
+                ], 400);
+            }
+
+            if ($technician->current_point < $gift->point_slab) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Insufficient points available for this gift. Balance: {$technician->current_point} points, Required: {$gift->point_slab} points."
+                ], 400);
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $transaction = GiftTransaction::create([
+                'user_id' => $user->id,
+                'gift_id' => $gift->id,
+                'policy_id' => $gift->policy_id,
+                'request_status' => 0,
+                'delivery_status' => 'not_sent',
+                'requested_at' => now(),
+            ]);
+
+            // Deduct points from the technician's wallet if applicable.
+            // Per requirement: Instant gifts points are "locked" via balance validation, not "cut" (deducted).
+            if ($gift->is_point_cut && $gift->policy_type !== 'instant') {
+                if ($technician->current_point < $gift->point_slab) {
+                    throw new \Exception('Insufficient points during deduction');
+                }
+
+                $technician->current_point -= $gift->point_slab;
+                $technician->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Gift requested successfully',
+                'data' => $transaction
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            Log::error($e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                // 'message' => 'Something went wrong. Please try again later.'
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
+            ], 500);
+        }
+    }
 }
