@@ -64,8 +64,8 @@ Route::group([
     Route::post('cancel_redeem/{id}', [App\Http\Controllers\Api\UserRedeemRequestAPIController::class, 'cancelRedeem']);
     // Route::post('/redeem', [GiftTransactionController::class, 'redeemApi']);
     Route::get('/gifts', [GiftController::class, 'index']);
-    Route::get('/transactions', [ApiGiftTransactionController::class,'index']);
-    Route::get('/transaction_details/{id}', [ApiGiftTransactionController::class,'transactionDetails']);
+    Route::get('/transactions', [ApiGiftTransactionController::class, 'index']);
+    Route::get('/transaction_details/{id}', [ApiGiftTransactionController::class, 'transactionDetails']);
 
     // Technician Nominee API
     Route::prefix('technician-nominee')->group(function () {
@@ -74,7 +74,6 @@ Route::group([
         Route::put('/update/{id}', [TechnicianNomineeController::class, 'update']);    // Update nominee
         Route::delete('/delete/{id}', [TechnicianNomineeController::class, 'destroy']); // Delete nominee
     });
-
 });
 Route::get('ssforce_user_redeem_requests', [App\Http\Controllers\Api\UserRedeemRequestAPIController::class, 'ssforceIndex']);
 Route::get('ssforce_user_redeem_requests_blank_gateway_number', [App\Http\Controllers\Api\UserRedeemRequestAPIController::class, 'ssforceUserRedeemRequestsBlankGatewayNumber']);
