@@ -255,11 +255,9 @@ class GiftTransactionController extends Controller
     {
         $request->validate([
             'gift_id' => 'required|exists:gifts,id',
-            'user_id' => 'required|exists:users,id',
         ]);
 
-        // $user = auth()->user();
-        $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
+        $user = auth()->user();
         $gift = Gift::findOrFail($request->gift_id);
 
         $technician = Technician::where('user_id', $user->id)->first();
@@ -271,12 +269,6 @@ class GiftTransactionController extends Controller
             ], 404);
         }
 
-        // $currentPoints = UserPoint::where('user_id', $user->id)->sum('point');
-
-        // dd([
-        //     'user_points' => $currentPoints,
-        //     'required_points' => $gift->point_slab
-        // ]);
         // INSTANT Gift Logic (Points are "locked" instead of "cut")
         if ($gift->policy_type === 'instant') {
             // Calculate total points locked by all previous instant gift redemptions (Pending or Approved)
