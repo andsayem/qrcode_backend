@@ -283,7 +283,7 @@ class GiftTransactionController extends Controller
             $totalLockedPoints = GiftTransaction::join('gifts', 'gift_transactions.gift_id', '=', 'gifts.id')
                 ->where('gift_transactions.user_id', $user->id)
                 ->where('gifts.policy_type', 'instant')
-                ->whereIn('gift_transactions.request_status', [0, 1]) 
+                ->whereIn('gift_transactions.request_status', [0, 1])
                 ->sum('gifts.point_slab');
 
             $availableForInstant = $technician->current_point - $totalLockedPoints;
@@ -351,7 +351,6 @@ class GiftTransactionController extends Controller
                 'message' => 'Gift requested successfully',
                 'data' => $transaction
             ]);
-
         } catch (\Exception $e) {
 
             DB::rollBack();
