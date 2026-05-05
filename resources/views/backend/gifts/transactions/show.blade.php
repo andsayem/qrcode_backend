@@ -73,6 +73,7 @@
 }
 
 .done { background: #28a745 !important; }
+.rejected { background: #dc3545 !important; }
 .pending { background: #c7c7c7 !important; }
 .active { background: #17a2b8 !important; }
 
@@ -142,11 +143,11 @@
 
             {{-- APPROVED --}}
             <div class="timeline-step">
-                <div class="timeline-icon {{ $transaction->request_status == 'approved' ? 'done' : 'pending' }}">
-                    <i class="fa fa-check"></i>
+                <div class="timeline-icon {{ $transaction->request_status == 1 ? 'done' : ($transaction->request_status == 2 ? 'rejected' : 'pending') }}">
+                    <i class="fa {{ $transaction->request_status == 2 ? 'fa-times' : 'fa-check' }}"></i>
                 </div>
                 <div class="step-text">
-                    <h6>Approved</h6>
+                    <h6>{{ $transaction->request_status == 2 ? 'Rejected' : 'Approved' }}</h6>
                     <small>
                         {{ $transaction->approved_at
                             ? \Carbon\Carbon::parse($transaction->approved_at)->format('d M Y, h:i A')
