@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Gift;
 use App\Models\GiftPolicy;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 
 class GiftController extends Controller
 {
@@ -43,7 +45,9 @@ class GiftController extends Controller
             'policy_type'     => 'required|in:instant,year_end',
             'gift_type' => 'required|in:payment_gateway,physical_gift',
             'is_point_cut'  => 'nullable|boolean',
-            'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp',
+            'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|dimensions:width=720,height=400',
+        ], [
+            'image.dimensions' => 'The gift image must be exactly 720x400 pixels.',
         ]);
 
         $data = $request->only([
@@ -60,7 +64,13 @@ class GiftController extends Controller
 
         // image upload
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('gifts', 'public');
+            $image = $request->file('image');
+            $filename = time() . '.' . $image->getClientOriginalExtension();
+            $path = 'gifts/' . $filename;
+
+            $img = Image::make($image->getRealPath())->fit(720, 400);
+            Storage::disk('public')->put($path, (string) $img->encode());
+            $data['image'] = $path;
         }
 
         Gift::create($data);
@@ -105,7 +115,9 @@ class GiftController extends Controller
             'policy_type'     => 'required|in:instant,year_end',
             'gift_type' => 'required|in:payment_gateway,physical_gift',
             'is_point_cut'  => 'nullable|boolean',
-            'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp',
+            'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|dimensions:width=720,height=400',
+        ], [
+            'image.dimensions' => 'The gift image must be exactly 720x400 pixels.',
         ]);
 
         $data = $request->only([
@@ -120,7 +132,13 @@ class GiftController extends Controller
         $data['is_point_cut'] = $request->is_point_cut ?? 1;
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('gifts', 'public');
+            $image = $request->file('image');
+            $filename = time() . '.' . $image->getClientOriginalExtension();
+            $path = 'gifts/' . $filename;
+
+            $img = Image::make($image->getRealPath())->fit(720, 400);
+            Storage::disk('public')->put($path, (string) $img->encode());
+            $data['image'] = $path;
         }
 
         $gift->update($data);
