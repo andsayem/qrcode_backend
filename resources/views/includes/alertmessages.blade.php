@@ -6,7 +6,7 @@
 <script>
     Swal.fire({
         title: 'Success!',
-        text: '{!! session('success')[0] !!}',
+        text: '{!! is_array(session('success')) ? session('success')[0] : session('success') !!}',
         icon: 'success',
         confirmButtonText: 'OK'
     })
@@ -18,7 +18,7 @@
 <script>
     Swal.fire({
         title: 'Error!',
-        text: '{!! session('fail')[0] !!}',
+        text: '{!! is_array(session('fail')) ? session('fail')[0] : session('fail') !!}',
         icon: 'error',
         confirmButtonText: 'OK'
     })
@@ -36,6 +36,3 @@
     })
 </script>
 @endif--}}
-
-
-

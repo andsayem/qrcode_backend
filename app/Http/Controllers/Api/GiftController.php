@@ -13,9 +13,14 @@ class GiftController extends Controller
 {
     public function index(Request $request)
     {
-    
-        $gifts = Gift::with('policy:id,program_name')
-        ->select('id', 'policy_id', 'gift_name', 'point_slab', 'policy_type', 'gift_type', 'image' )
+        $today = now()->toDateString();
+
+        $gifts = Gift::whereHas('policy', function ($query) use ($today) {
+            $query->where('start_date', '<=', $today)
+                  ->where('end_date', '>=', $today);
+        })
+        ->with('policy:id,program_name')
+        ->select('id', 'policy_id', 'gift_name', 'point_slab', 'policy_type', 'gift_type', 'image', 'is_point_cut')
         ->paginate(10);
 
         // transform path
@@ -28,6 +33,7 @@ class GiftController extends Controller
                 'point_slab'  => $gift->point_slab,
                 'policy_type' => $gift->policy_type,
                 'gift_type'   => $gift->gift_type,
+                'point_cut'   => $gift->is_point_cut ? 'Yes' : 'No',
                 'image'       => $gift->image 
                     ? asset('storage/' . $gift->image) 
                     : null,

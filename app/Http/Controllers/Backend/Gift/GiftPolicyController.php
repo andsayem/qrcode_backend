@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Backend\Gift;
 use App\Http\Controllers\Controller;
 use App\Models\GiftPolicy;
 use Illuminate\Http\Request;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 
 class GiftPolicyController extends Controller
 {
@@ -43,7 +45,9 @@ class GiftPolicyController extends Controller
         'program_name' => 'required',
         'start_date' => 'required|date',
         'end_date' => 'required|date',
-        'image' => 'nullable|image'
+        'image' => 'nullable|image|dimensions:width=720,height=400'
+    ], [
+        'image.dimensions' => 'The policy image must be exactly 720x400 pixels.',
     ]);
 
     $data = $request->only([
@@ -54,7 +58,13 @@ class GiftPolicyController extends Controller
 
     // upload image
     if ($request->hasFile('image')) {
-        $data['image'] = $request->file('image')->store('gift_policies', 'public');
+        $image = $request->file('image');
+        $filename = time() . '.' . $image->getClientOriginalExtension();
+        $path = 'gifts/' . $filename;
+
+        $img = Image::make($image->getRealPath())->fit(720, 400);
+        Storage::disk('public')->put($path, (string) $img->encode());
+        $data['image'] = $path;
     }
 
     GiftPolicy::create($data);
@@ -100,6 +110,9 @@ class GiftPolicyController extends Controller
             'program_name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
+            'image' => 'nullable|image|dimensions:width=720,height=400',
+        ], [
+            'image.dimensions' => 'The policy image must be exactly 720x400 pixels.',
         ]);
 
         $giftPolicy = GiftPolicy::findOrFail($id);

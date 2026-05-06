@@ -81,7 +81,11 @@
             <!-- Image -->
             <div class="form-group">
                 <label>Image</label>
-                <input type="file" name="image" class="form-control">
+                <input type="file" name="image" class="form-control @error('image') is-invalid @enderror">
+                <small class="text-info">Required image size: 720x400 pixels.</small>
+                @error('image')
+                    <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
+                @enderror
             </div>
 
             <!-- Submit -->

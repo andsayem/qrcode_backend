@@ -114,19 +114,35 @@ class GiftTransactionController extends Controller
      */
     public function approve($id)
     {
-        $transaction = GiftTransaction::findOrFail($id);
+        $transaction = GiftTransaction::with('gift')->findOrFail($id);
 
         // prevent re-approve
         if ($transaction->request_status !== 0) {
             return redirect()->back()->with('error', 'Already processed!');
         }
 
-        $transaction->update([
-            'request_status' => 1,
-            'approved_at' => now(),
-        ]);
+        DB::beginTransaction();
+        try {
+            $gift = $transaction->gift;
+            if ($gift->is_point_cut == 1) {
+                $technician = Technician::where('user_id', $transaction->user_id)->first();
+                if ($technician) {
+                    $technician->pending_point -= $gift->point_slab;
+                    $technician->save();
+                }
+            }
 
-        return redirect()->back()->with('success', 'Request approved!');
+            $transaction->update([
+                'request_status' => 1,
+                'approved_at' => now(),
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Request approved!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Failed to approve: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -134,18 +150,35 @@ class GiftTransactionController extends Controller
      */
     public function reject($id)
     {
-        $transaction = GiftTransaction::findOrFail($id);
+        $transaction = GiftTransaction::with('gift')->findOrFail($id);
 
         if ($transaction->request_status !== 0) {
             return redirect()->back()->with('error', 'Already processed!');
         }
 
-        $transaction->update([
-            'request_status' => 2,
-            'approved_at' => now(),
-        ]);
+        DB::beginTransaction();
+        try {
+            $gift = $transaction->gift;
+            if ($gift->is_point_cut == 1) {
+                $technician = Technician::where('user_id', $transaction->user_id)->first();
+                if ($technician) {
+                    $technician->current_point += $gift->point_slab;
+                    $technician->pending_point -= $gift->point_slab;
+                    $technician->save();
+                }
+            }
 
-        return redirect()->back()->with('success', 'Request rejected!');
+            $transaction->update([
+                'request_status' => 2,
+                'approved_at' => now(),
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Request rejected!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Failed to reject: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -214,18 +247,30 @@ class GiftTransactionController extends Controller
         // Get the selected transaction IDs
         $transactionIds = $request->input('transaction_ids');
 
-        // Update the request_status to 'approved' for the selected transactions
-        GiftTransaction::whereIn('id', $transactionIds)
-            ->where('request_status', 0)
-            ->update([
-                'request_status' => 1,
-                'approved_at' => now(),
-            ]);
+        DB::beginTransaction();
+        try {
+            $transactions = GiftTransaction::with('gift')
+                ->whereIn('id', $transactionIds)
+                ->where('request_status', 0)
+                ->get();
 
-        // Redirect back with a success message
-        return response()->json([
-            'message' => 'Gifts Approved successfully'
-        ]);
+            foreach ($transactions as $transaction) {
+                $gift = $transaction->gift;
+                if ($gift->is_point_cut == 1) {
+                    $technician = Technician::where('user_id', $transaction->user_id)->first();
+                    if ($technician) {
+                        $technician->pending_point -= $gift->point_slab;
+                        $technician->save();
+                    }
+                }
+                $transaction->update(['request_status' => 1, 'approved_at' => now()]);
+            }
+            DB::commit();
+            return response()->json(['message' => 'Gifts Approved successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -271,35 +316,10 @@ class GiftTransactionController extends Controller
             ], 404);
         }
 
-        // $currentPoints = UserPoint::where('user_id', $user->id)->sum('point');
-
-        // dd([
-        //     'user_points' => $currentPoints,
-        //     'required_points' => $gift->point_slab
-        // ]);
-        // INSTANT Gift Logic (Points are "locked" instead of "cut")
-        if ($gift->policy_type === 'instant') {
-            // Calculate total points locked by all previous instant gift redemptions (Pending or Approved)
-            $totalLockedPoints = GiftTransaction::join('gifts', 'gift_transactions.gift_id', '=', 'gifts.id')
-                ->where('gift_transactions.user_id', $user->id)
-                ->where('gifts.policy_type', 'instant')
-                ->whereIn('gift_transactions.request_status', [0, 1])
-                ->sum('gifts.point_slab');
-
-            $availableForInstant = $technician->current_point - $totalLockedPoints;
-
-            if ($availableForInstant < $gift->point_slab) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Insufficient available points. You have {$availableForInstant} points free for instant gifts."
-                ], 400);
-            }
-        }
-
-        //  YEAR-END
+        // 1. Policy Frequency Check
+        // Year-end gifts can only be collected once per year.
+        // Instant gifts have no frequency limit and can be collected as long as points are available.
         if ($gift->policy_type === 'year_end') {
-
-            // once per year
             $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
                 ->where('gift_id', $gift->id)
                 ->whereYear('requested_at', now()->year)
@@ -312,18 +332,47 @@ class GiftTransactionController extends Controller
                     'message' => 'This year-end gift has already been requested this year.'
                 ], 400);
             }
+        }
 
-            if ($technician->current_point < $gift->point_slab) {
+        // LOCKED System (If Point Cut is set to No in form)
+        if ($gift->is_point_cut == 0) {
+            // Calculate total points locked by all previous redemptions using the locked system
+            $totalLockedPoints = GiftTransaction::join('gifts', 'gift_transactions.gift_id', '=', 'gifts.id')
+                ->where('gift_transactions.user_id', $user->id)
+                ->where('gifts.is_point_cut', 0)
+                ->whereIn('gift_transactions.request_status', [0, 1])
+                ->sum('gifts.point_slab');
+
+            $availableForUse = $technician->current_point - $totalLockedPoints;
+
+            if ($availableForUse < $gift->point_slab) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Insufficient points available for this gift. Balance: {$technician->current_point} points, Required: {$gift->point_slab} points."
+                    'message' => "Insufficient available points. You have {$availableForUse} points free for this gift."
                 ], 400);
             }
         }
 
         DB::beginTransaction();
-
         try {
+            // Re-fetch technician with lock inside transaction to ensure point deduction is accurate
+            $technician = Technician::where('user_id', $user->id)->lockForUpdate()->first();
+
+            // Deduct points from the technician's wallet if applicable.
+            if ($gift->is_point_cut != 0) {
+                if ($technician->current_point < $gift->point_slab) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Insufficient points available for this gift. Balance: {$technician->current_point} points, Required: {$gift->point_slab} points."
+                    ], 400);
+                }
+
+                // Move points from current to pending until admin approves
+                $technician->current_point -= $gift->point_slab;
+                $technician->pending_point += $gift->point_slab;
+                $technician->save();
+            }
+
             $transaction = GiftTransaction::create([
                 'user_id' => $user->id,
                 'gift_id' => $gift->id,
@@ -333,17 +382,6 @@ class GiftTransactionController extends Controller
                 'requested_at' => now(),
             ]);
 
-            // Deduct points from the technician's wallet if applicable.
-            // Per requirement: Instant gifts points are "locked" via balance validation, not "cut" (deducted).
-            if ($gift->is_point_cut && $gift->policy_type !== 'instant') {
-                if ($technician->current_point < $gift->point_slab) {
-                    throw new \Exception('Insufficient points during deduction');
-                }
-
-                $technician->current_point -= $gift->point_slab;
-                $technician->save();
-            }
-
             DB::commit();
 
             return response()->json([
@@ -352,14 +390,11 @@ class GiftTransactionController extends Controller
                 'data' => $transaction
             ]);
         } catch (\Exception $e) {
-
             DB::rollBack();
-
             Log::error($e->getMessage());
 
             return response()->json([
                 'success' => false,
-                // 'message' => 'Something went wrong. Please try again later.'
                 'message' => $e->getMessage(),
                 'line' => $e->getLine()
             ], 500);
