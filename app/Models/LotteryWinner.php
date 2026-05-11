@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminarte\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class LotteryWinner extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'lottery_id',
         'gift_assign_id',

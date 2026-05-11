@@ -25,23 +25,25 @@ use App\Http\Controllers\Backend\TechnicianNomineeController;
 use App\Http\Controllers\Backend\Gift\GiftPolicyController;
 use App\Http\Controllers\Backend\Gift\GiftController;
 use App\Http\Controllers\Backend\Gift\GiftTransactionController;
+use App\Http\Controllers\Backend\Lottery\LotteryController;
+use App\Http\Controllers\Backend\Lottery\LotteryGiftAssignController;
 
 Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-Auth::routes(['register' => false]); 
+Auth::routes(['register' => false]);
 Route::get('/optimize', function () {
     $exitCode = \Illuminate\Support\Facades\Artisan::call('optimize');
     return '<h1>Reoptimized class loader</h1>';
 });
 
 
-Route::middleware(['auth'])->group(function () { 
-    Route::get('/dashboard', \App\Http\Controllers\HomeController::class)->name('admin.dashboard'); 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', \App\Http\Controllers\HomeController::class)->name('admin.dashboard');
     //Mgt Dashboard
 
-     Route::get('/mgt-dashboard', \App\Http\Controllers\MgtDashboardController::class)->name('admin.mgtdashboard'); 
+    Route::get('/mgt-dashboard', \App\Http\Controllers\MgtDashboardController::class)->name('admin.mgtdashboard');
 
 
     Route::prefix('reports')->group(function () {
@@ -106,7 +108,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::get('products_download', [ProductController::class, 'download'])
         ->name('admin.products.download');
     Route::post('products_upload', [ProductController::class, 'upload'])
-    ->name('admin.products.upload');
+        ->name('admin.products.upload');
 
     Route::resource('vendors', VendorController::class, ['names' => 'admin.vendors']);
     Route::resource('redeem', RedeemController::class, ['names' => 'admin.redeem']);
@@ -174,7 +176,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::get('earn-vs-settlement-report', [App\Http\Controllers\Backend\HomeController::class, 'earnVSSettlementReport']);
     Route::resource('notification', App\Http\Controllers\Backend\NotificationController::class);
 
-      // Show SMS send form + template selection
+    // Show SMS send form + template selection
     Route::get('sms', [App\Http\Controllers\Backend\SmsController::class, 'index'])
         ->name('admin.sms.index');  // <-- add admin. prefix in name
 
@@ -185,10 +187,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     // View SMS logs
     Route::get('sms/logs', [App\Http\Controllers\Backend\SmsController::class, 'logs'])
         ->name('admin.sms.logs');   // <-- add admin. prefix in name 
-        
-    Route::get('technician-nominee/{userId}', [TechnicianNomineeController::class, 'index']); 
+
+    Route::get('technician-nominee/{userId}', [TechnicianNomineeController::class, 'index']);
     Route::post('technician-nominee/store', [TechnicianNomineeController::class, 'store']);
-    Route::put('technician-nominee/update/{id}', [TechnicianNomineeController::class, 'update']); 
+    Route::put('technician-nominee/update/{id}', [TechnicianNomineeController::class, 'update']);
     Route::delete('technician-nominee/delete/{id}', [TechnicianNomineeController::class, 'destroy']);
 
     Route::resource('gift-policies', GiftPolicyController::class, ['names' => 'admin.gift-policies']);
@@ -197,33 +199,64 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
 
     Route::prefix('gift')->name('admin.gift.')->group(function () {
 
-    Route::get('/transactions', [GiftTransactionController::class, 'index'])
-        ->name('transactions.index');
+        Route::get('/transactions', [GiftTransactionController::class, 'index'])
+            ->name('transactions.index');
 
-    Route::post('/request', [GiftTransactionController::class, 'store'])
-        ->name('transactions.store');
+        Route::post('/request', [GiftTransactionController::class, 'store'])
+            ->name('transactions.store');
 
-    Route::post('/approve/{id}', [GiftTransactionController::class, 'approve'])
-        ->name('transactions.approve');
+        Route::post('/approve/{id}', [GiftTransactionController::class, 'approve'])
+            ->name('transactions.approve');
 
-    Route::post('/reject/{id}', [GiftTransactionController::class, 'reject'])
-        ->name('transactions.reject');
+        Route::post('/reject/{id}', [GiftTransactionController::class, 'reject'])
+            ->name('transactions.reject');
 
-    Route::post('/send/{id}', [GiftTransactionController::class, 'send'])
-        ->name('transactions.send');
+        Route::post('/send/{id}', [GiftTransactionController::class, 'send'])
+            ->name('transactions.send');
 
-    Route::post('/received/{id}', [GiftTransactionController::class, 'received'])
-        ->name('transactions.received');
+        Route::post('/received/{id}', [GiftTransactionController::class, 'received'])
+            ->name('transactions.received');
 
-    Route::get('/show/{id}', [GiftTransactionController::class, 'show'])
-        ->name('transactions.show');
-    
-    Route::get('/export', [GiftTransactionController::class, 'export'])->name('transactions.export');
+        Route::get('/show/{id}', [GiftTransactionController::class, 'show'])
+            ->name('transactions.show');
 
-    Route::post('/transactions/bulk-approve', [GiftTransactionController::class, 'bulkApprove'])->name('transactions.bulk_approve');
+        Route::get('/export', [GiftTransactionController::class, 'export'])->name('transactions.export');
 
-    Route::post('/transactions/bulk-send', [GiftTransactionController::class, 'bulkSend'])->name('transactions.bulk_send');
-});
+        Route::post('/transactions/bulk-approve', [GiftTransactionController::class, 'bulkApprove'])->name('transactions.bulk_approve');
+
+        Route::post('/transactions/bulk-send', [GiftTransactionController::class, 'bulkSend'])->name('transactions.bulk_send');
+    });
+
+
+    // lotteries  
+    Route::resource('lotteries', LotteryController::class, ['names' => 'admin.lotteries']);
+
+    // Gift assign page
+    Route::get(
+        'lotteries-gift-assign/{lottery}',
+        [LotteryGiftAssignController::class, 'index']
+    )->name('admin.lottery-gift-assign.index');
+
+    Route::post(
+        'lotteries-gift-assign/{lottery}',
+        [LotteryGiftAssignController::class, 'store']
+    )->name('admin.lottery-gift-assign.store');
+
+    Route::delete(
+        'lottery-gift-assign/{id}',
+        [LotteryGiftAssignController::class, 'destroy']
+    )->name('admin.lottery-gift-assign.destroy');
+
+
+    // 🎯 Draw page (GET)
+    Route::get('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
+        ->name('admin.lotteries.draw');
+
+    // 🎯 Draw next winner (POST)
+    Route::post('lotteries/{lottery}/draw-next', [LotteryController::class, 'drawNext'])
+        ->name('admin.lotteries.draw-next');
+
+    Route::get('lotteries/{lottery}/draw-next', [LotteryController::class, 'drawNext']);
 });
 
 

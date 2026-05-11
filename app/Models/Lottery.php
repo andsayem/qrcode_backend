@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+
 class Lottery extends Model
 {
     use HasFactory;
@@ -13,6 +14,7 @@ class Lottery extends Model
         'from_date',
         'to_date',
         'required_points',
+        'total_winners',
         'status',
         'current_position',
         'started_at',

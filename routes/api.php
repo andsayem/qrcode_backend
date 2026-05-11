@@ -68,6 +68,7 @@ Route::group([
     Route::get('/transaction_details/{id}', [ApiGiftTransactionController::class, 'transactionDetails']);
     Route::post('/redeem', [GiftTransactionController::class, 'redeemApi']);
 
+
     // Technician Nominee API
     Route::prefix('technician-nominee')->group(function () {
         Route::get('/{userId}', [TechnicianNomineeController::class, 'index']);        // List nominees for a technician

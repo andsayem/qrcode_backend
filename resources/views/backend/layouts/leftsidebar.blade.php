@@ -316,8 +316,8 @@ $allPermissionNames = $allPermissions->pluck('name')->toArray();
 
 
                         <li>
-                            <a href="{{ route('admin.gifts.index') }}"
-                                class="{{ request()->routeIs('admin.gifts.*') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('admin.lotteries.index') }}"
+                                class="{{ request()->routeIs('admin.lotteries.*') ? 'active-submenu' : '' }}">
                                 <span>Lotteries</span>
                             </a>
                         </li>
