@@ -17,6 +17,7 @@ class Gift extends Model
         'policy_type',
         'gift_type',
         'is_point_cut',
+        'max_redeem_limit'
     ];
 
     /**

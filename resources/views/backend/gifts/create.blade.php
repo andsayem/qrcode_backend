@@ -32,9 +32,9 @@
                 <select name="policy_id" class="form-control" required>
                     <option value="">Select Policy</option>
                     @foreach($policies as $policy)
-                        <option value="{{ $policy->id }}">
-                            {{ $policy->program_name }}
-                        </option>
+                    <option value="{{ $policy->id }}">
+                        {{ $policy->program_name }}
+                    </option>
                     @endforeach
                 </select>
             </div>
@@ -84,14 +84,20 @@
                 <input type="file" name="image" class="form-control @error('image') is-invalid @enderror">
                 <small class="text-info">Required image size: 720x400 pixels.</small>
                 @error('image')
-                    <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
+                <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
                 @enderror
             </div>
 
-            <!-- Submit -->
-            <button type="submit" class="btn btn-primary">
-                <i class="fa fa-save"></i> Save Gift
-            </button>
+            <!-- Max Redeem Limit -->
+            <div class="form-group">
+                <label>Max Redeem Limit</label>
+                <input type="number" name="max_redeem_limit" class="form-control">
+                <small class="text-info">Leave blank for unlimited.</small>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-save"></i> Save Gift
+                </button>
 
         </form>
 

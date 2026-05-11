@@ -300,12 +300,12 @@ class GiftTransactionController extends Controller
     {
         $request->validate([
             'gift_id' => 'required|exists:gifts,id',
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
-        // $user = auth()->user();
-        $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
-        $gift = Gift::findOrFail($request->gift_id);
+
+        $user = $request->user_id ? \App\Models\User::find($request->user_id) : auth()->user();
+        $gift = Gift::select('gifts.*')->with('policy')->where('id', $request->gift_id)->first();
 
         $technician = Technician::where('user_id', $user->id)->first();
 
@@ -319,20 +319,24 @@ class GiftTransactionController extends Controller
         // 1. Policy Frequency Check
         // Year-end gifts can only be collected once per year.
         // Instant gifts have no frequency limit and can be collected as long as points are available.
-        if ($gift->policy_type === 'year_end') {
-            $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
-                ->where('gift_id', $gift->id)
-                ->whereYear('requested_at', now()->year)
-                ->whereIn('request_status', [0, 1])
-                ->exists();
 
-            if ($alreadyRedeemed) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This year-end gift has already been requested this year.'
-                ], 400);
-            }
+
+        // if ($gift->policy_type === 'year_end') {
+        $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
+            ->where('gift_id', $gift->id)
+            ->whereBetween('requested_at', [$gift->policy->start_date, $gift->policy->end_date])
+            ->whereIn('request_status', [0, 1])
+            ->count();
+
+
+
+        if ($alreadyRedeemed >= $gift->max_redeem_limit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This gift has already been requested in this period.'
+            ], 400);
         }
+        //}
 
         // LOCKED System (If Point Cut is set to No in form)
         if ($gift->is_point_cut == 0) {
