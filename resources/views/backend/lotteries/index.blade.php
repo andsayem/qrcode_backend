@@ -90,9 +90,9 @@
                             @if($lottery->status == 'pending')
                             <span class="badge badge-secondary">Pending</span>
                             @elseif($lottery->status == 'running')
-                            <span class="badge badge-success">Running</span>
+                            <span class="badge badge-warning">Running</span>
                             @else
-                            <span class="badge badge-dark">Completed</span>
+                            <span class="badge badge-success">Completed</span>
                             @endif
                         </td>
 

@@ -112,11 +112,39 @@
 </style>
 
 <div class="block-header">
-    <h2 class="title">🎯 Lottery Draw - {{ $lottery->title }}</h2>
-    <p class="sub-text">Select winners one by one in real-time draw system</p>
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h2 class="title">🎯 Lottery Draw - {{ $lottery->title }}</h2>
+            <p class="sub-text">Select winners one by one in real-time draw system</p>
+        </div>
+        <div class="col-md-6 mr-auto text-right">
+            <a href="{{ route('admin.lotteries.index') }}" class="btn btn-secondary">
+                <i class="fa fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
 </div>
 
 <div class="container-fluid">
+
+    {{-- Alert Messages --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            {{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
 
     {{-- TOP INFO --}}
     <div class="card-white p-4 mb-3">
@@ -132,6 +160,8 @@
             <div>
                 @if(($lottery->current_position ?? 0) >= $lottery->total_winners)
                 <span class="status-done">Completed</span>
+                @elseif(($lottery->current_position ?? 0) == 0)
+                <span class="status-running" style="background: #f3f4f6; color: #6b7280;">Pending</span>
                 @else
                 <span class="status-running">Running</span>
                 @endif
@@ -170,18 +200,18 @@
         <h5 class="mb-3">🏆 Winners List</h5>
 
         @forelse($lottery->winners as $winner)
-        <div class="winner-card d-flex justify-content-between align-items-center">
+        <div class="winner-card d-flex align-items-center">
 
-            <div>
+            <div style="min-width: 60px;">
                 <span class="pos-badge">#{{ $winner->position }}</span>
             </div>
 
-            <div>
+        <div class="flex-grow-1 text-center">
                 <strong>{{ $winner->winner_name }}</strong><br>
-                <small>{{ $winner->mobile_no }}</small>
+                <small class="text-muted">{{ $winner->user->email }}</small>
             </div>
 
-            <div>
+        <div class="text-right" style="min-width: 60px;">
                 <span class="badge badge-primary">
                     {{ $winner->giftAssign->gift->gift_name ?? 'N/A' }}
                 </span>
