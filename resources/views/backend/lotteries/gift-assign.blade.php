@@ -21,6 +21,11 @@
 <div class="card">
     <div class="body">
 
+        @if($lottery->status === 'completed')
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> This lottery is completed. Gift assignments can no longer be modified.
+            </div>
+        @else
         <form action="{{ route('admin.lottery-gift-assign.store', $lottery->id) }}" method="POST">
             @csrf
 
@@ -67,6 +72,7 @@
                 </button>
 
         </form>
+        @endif
 
         <hr>
 

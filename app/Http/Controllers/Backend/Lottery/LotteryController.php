@@ -101,6 +101,9 @@ class LotteryController extends Controller
      */
     public function edit(Lottery $lottery)
     {
+        if ($lottery->status === 'completed') {
+            return redirect()->route('admin.lotteries.index')->with('error', 'Completed lotteries cannot be edited.');
+        }
         return view('backend.lotteries.edit', compact('lottery'));
     }
 
@@ -109,6 +112,10 @@ class LotteryController extends Controller
      */
     public function update(Request $request, Lottery $lottery)
     {
+        if ($lottery->status === 'completed') {
+            return redirect()->route('admin.lotteries.index')->with('error', 'Completed lotteries cannot be updated.');
+        }
+
         $request->validate([
             'title'            => 'required|string|max:255',
             'from_date'        => 'required|date',
@@ -150,6 +157,9 @@ class LotteryController extends Controller
      */
     public function destroy(Lottery $lottery)
     {
+        if ($lottery->status === 'completed') {
+            return redirect()->route('admin.lotteries.index')->with('error', 'Completed lotteries cannot be deleted.');
+        }
         $lottery->delete();
 
         return redirect()
