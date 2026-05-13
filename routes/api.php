@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\TechnicianNomineeController;
 use App\Http\Controllers\Backend\Gift\GiftTransactionController;
 use App\Http\Controllers\Api\GiftController;
 use App\Http\Controllers\Api\GiftTransactionController as ApiGiftTransactionController;
+use App\Http\Controllers\Api\LotteryApiController;
 
 // Route::get('/login', function(){
 //     print_r('Test');
@@ -68,6 +69,9 @@ Route::group([
     Route::get('/transaction_details/{id}', [ApiGiftTransactionController::class, 'transactionDetails']);
     Route::post('/redeem', [GiftTransactionController::class, 'redeemApi']);
 
+    // Authenticated Lottery Routes
+    
+
 
     // Technician Nominee API
     Route::prefix('technician-nominee')->group(function () {
@@ -109,3 +113,10 @@ Route::apiResource('app-version', App\Http\Controllers\Api\AppVersionController:
 Route::get('summary_report', [App\Console\Commands\SummaryReport::class, 'handle']);
 
 Route::get('check_technician_point', [App\Http\Controllers\Api\TechnicianAPIController::class, 'checkTechnicianPoint']);
+
+//Lottery Routes
+Route::prefix('lotteries')->group(function () {
+    // GET /api/lotteries/current - The main polling endpoint for the mobile app
+    Route::get('currentLottery', [LotteryApiController::class, 'current']);
+
+});
