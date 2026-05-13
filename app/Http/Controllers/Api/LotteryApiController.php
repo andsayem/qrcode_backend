@@ -19,10 +19,20 @@ class LotteryApiController extends Controller
     {
         // Cache for 3 seconds to handle burst polling during live draws
         $data = Cache::remember('lottery_poll_current', 3, function () {
-            $lottery = Lottery::with(['giftAssignments.gift', 'winners.giftAssign.gift'])
-                ->where('to_date', '>=', now()->toDateString())
-                ->whereIn('status', ['pending', 'running', 'completed'])
-                ->latest()
+            $lottery = Lottery::with(['giftAssignments.gift', 'winners.giftAssign.gift', 'winners.user'])
+                ->where(function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('status', 'running')
+                          ->where('current_position', '>', 0); // Only running lotteries with at least one draw
+                    })
+                        ->orWhere(function ($q) {
+                            // Allow the completed lottery to be visible for a 60-second window
+                            // so the app can fetch and display the final winner board.
+                            $q->where('status', 'completed')
+                              ->where('completed_at', '>=', now()->subSeconds(60));
+                        });
+                })
+                ->latest('updated_at')
                 ->first();
 
             if (!$lottery) {
@@ -61,7 +71,7 @@ class LotteryApiController extends Controller
                     ];
                 }),
                 'winners' => $lottery->winners->sortBy('position')->values()->map(function ($winner) {
-                    $mobile = $winner->mobile_no;
+                    $mobile = $winner->mobile_no ?: ($winner->user->phone_number ?? $winner->user->email ?? 'N/A');
                     $masked = (strlen($mobile) >= 6) ? substr($mobile, 0, 3) . '****' . substr($mobile, -3) : $mobile;
 
                     return [
@@ -84,102 +94,120 @@ class LotteryApiController extends Controller
     }
 
     /**
-     * GET /api/lotteries/{lottery}/winners
-     */
-    public function getWinnersList(Lottery $lottery)
-    {
-        $winners = $lottery->winners()
-            ->with(['giftAssign.gift'])
-            ->orderBy('position', 'asc')
-            ->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $winners->map(function ($winner, $index) {
-                $mobile = $winner->mobile_no;
-                $masked = (strlen($mobile) >= 6) ? substr($mobile, 0, 3) . '****' . substr($mobile, -3) : $mobile;
-
-                return [
-                    'sl' => $index + 1,
-                    'position' => $winner->position,
-                    'position_label' => $this->ordinal($winner->position) . ' Place',
-                    'name' => $winner->winner_name,
-                    'mobile' => $masked,
-                    'gift_name' => $winner->giftAssign->gift->gift_name ?? 'N/A',
-                    'drawn_at' => $winner->draw_time ? $winner->draw_time->toIso8601String() : null,
-                ];
-            }),
-        ]);
-    }
-
-    /**
      * GET /api/lotteries/history
      */
+
     public function history(Request $request)
     {
-        // If a specific lottery_id is provided (e.g., user clicked a history item),
-        // return the full winner details for that lottery.
+        // -----------------------------------------------------------------------
+        // DETAIL VIEW — user selected a specific lottery
+        // GET /api/lotteries/history?lottery_id=12
+        // -----------------------------------------------------------------------
         if ($request->filled('lottery_id')) {
+    
             $lottery = Lottery::find($request->lottery_id);
+    
             if (!$lottery) {
-                return response()->json(['status' => 'error', 'message' => 'Lottery not found.'], 404);
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Lottery not found.',
+                ], 404);
             }
-            return $this->getWinnersList($lottery);
+    
+            // Only show completed lotteries in history
+            if ($lottery->current_position < $lottery->total_winners) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'This lottery has not completed yet.',
+                ], 422);
+            }
+    
+            $winners = LotteryWinner::where('lottery_id', $lottery->id)
+                ->with(['giftAssign.gift', 'user'])
+                ->orderBy('position', 'asc')   
+                ->get();
+    
+            return response()->json([
+                'status' => 'success',
+    
+                // Upper section — lottery info card
+                'lottery' => [
+                    'id'           => $lottery->id,
+                    'title'        => $lottery->title,
+                    'total_winners'=> $lottery->total_winners,
+                    'completed_at' => $lottery->updated_at
+                                        ? $lottery->updated_at->format('d M Y, h:i A')
+                                        : 'N/A',
+                ],
+    
+                // Lower section — winner list table
+                // Columns: SL | User ID | Winner Name | Mobile No | Gift | Winning Position
+                'winner_list' => $winners->values()->map(function ($winner, $index) {
+                    $mobile = $winner->mobile_no
+                        ?: ($winner->user->phone_number
+                            ?? $winner->user->email
+                            ?? 'N/A');
+    
+                    $masked = (strlen($mobile) >= 6)
+                        ? substr($mobile, 0, 3) . '****' . substr($mobile, -3)
+                        : $mobile;
+    
+                    return [
+                        'sl'               => $index + 1,                        // row number
+                        'user_id'          => $winner->user_id,
+                        'winner_name'      => $winner->winner_name,
+                        'mobile_no'        => $masked,
+                        'gift'             => $winner->giftAssign->gift->gift_name ?? 'N/A',
+                        'winning_position' => $winner->position,
+                        'position_label'   => $this->ordinal($winner->position) . ' place',
+                        'draw_time'        => $winner->draw_time
+                                                ? $winner->draw_time->format('d M Y, h:i A')
+                                                : 'N/A',
+                    ];
+                }),
+            ]);
         }
-
-        $history = Lottery::where('current_position', '>=', DB::raw('total_winners'))
-            ->with([
-                'winners' => fn($q) => $q->where('position', 1),
-                'giftAssignments' => fn($q) => $q->where('position', 1)->with('gift')
-            ])
-            ->orderBy('completed_at', 'DESC')
+    
+        // -----------------------------------------------------------------------
+        // LIST VIEW — show all completed lotteries for selection
+        // GET /api/lotteries/history
+        // -----------------------------------------------------------------------
+    
+        // Derive completed: current_position = total_winners
+        // No status column — use column comparison
+        $lotteries = Lottery::whereColumn('current_position', 'total_winners')
+            ->where('total_winners', '>', 0)     // exclude lotteries never started
             ->latest('updated_at')
             ->paginate(10);
-
-        $history->getCollection()->transform(function ($l) {
-            $topWinner = $l->winners->first();
-            $topGift = $l->giftAssignments->first();
-
+    
+        $lotteries->getCollection()->transform(function ($lottery) {
+    
+            // Get position 1 winner (grand prize) for the preview card
+            $topWinner = LotteryWinner::where('lottery_id', $lottery->id)
+                ->where('position', 1)
+                ->with(['giftAssign.gift'])
+                ->first();
+    
             return [
-                'id' => $l->id,
-                'title' => $l->title,
-                'completed_at' => ($l->completed_at ?? $l->updated_at)->toIso8601String(),
-                'total_winners' => $l->total_winners,
-                'top_winner_name' => $topWinner->winner_name ?? 'N/A',
-                'top_gift_name' => $topGift->gift->gift_name ?? 'N/A',
+                'id'           => $lottery->id,
+                'title'        => $lottery->title,
+                'total_winners'=> $lottery->total_winners,
+                'completed_at' => $lottery->updated_at
+                                    ? $lottery->updated_at->format('d M Y')
+                                    : 'N/A',
+                // Preview info for the lottery card in the list
+                'top_winner'   => $topWinner?->winner_name ?? 'N/A',
+                'top_gift'     => $topWinner?->giftAssign?->gift?->gift_name ?? 'N/A',
             ];
         });
-
-        return response()->json($history);
-    }
     
-    /**
-     * GET /api/lotteries/my-wins
-     */
-    public function myWins()
-    {
-        if (!auth()->check()) {
-            return response()->json(['data' => []]);
-        }
-
-        $wins = LotteryWinner::where('user_id', auth()->id())
-            ->with(['lottery', 'giftAssign.gift'])
-            ->orderBy('draw_time', 'DESC')
-            ->get();
-
         return response()->json([
-            'data' => $wins->map(function ($win) {
-                return [
-                    'lottery_id' => $win->lottery_id,
-                    'lottery_title' => $win->lottery->title ?? 'N/A',
-                    'position' => $win->position,
-                    'position_label' => $this->ordinal($win->position) . ' Place',
-                    'gift_name' => $win->giftAssign->gift->gift_name ?? 'N/A',
-                    'drawn_at' => $win->draw_time ? $win->draw_time->toIso8601String() : null,
-                ];
-            })
+            'status' => 'success',
+            'data'   => $lotteries,
         ]);
     }
+
+
 
     private function ordinal($n)
     {

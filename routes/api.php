@@ -118,5 +118,6 @@ Route::get('check_technician_point', [App\Http\Controllers\Api\TechnicianAPICont
 Route::prefix('lotteries')->group(function () {
     // GET /api/lotteries/current - The main polling endpoint for the mobile app
     Route::get('currentLottery', [LotteryApiController::class, 'current']);
-
+    // GET /api/lotteries/history - For viewing past results
+    Route::get('lotteryHistory', [LotteryApiController::class, 'history']);
 });

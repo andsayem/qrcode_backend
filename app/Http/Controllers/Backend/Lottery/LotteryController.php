@@ -179,6 +179,16 @@ class LotteryController extends Controller
     // 🎯 DRAW NEXT WINNER
     public function drawNext(Lottery $lottery)
     {
+        // Prevent drawing if another lottery is currently running
+        $runningLotteryExists = Lottery::where('status', 'running')
+                                       ->where('id', '!=', $lottery->id)
+                                       ->exists();
+
+        if ($runningLotteryExists) {
+            return back()->with('error', 'Another lottery is currently running. Please wait for it to complete before drawing from this lottery.');
+        }
+
+
         $current = $lottery->current_position ?? 0;
 
         // stop condition
