@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class LotteryGiftAssign extends Model
 {
     use HasFactory;
+
+    protected $table = 'lottery_gift_assign';
+
     protected $fillable = [
         'lottery_id',
         'gift_id',

@@ -10,6 +10,11 @@
         <div class="col-lg-5 col-md-8 col-sm-12">
             <h2>Edit Lottery</h2>
         </div>
+        <div class="col-lg-6 ml-auto text-right">
+            <a href="{{ route('admin.lotteries.index') }}" class="btn btn-secondary">
+                <i class="fa fa-arrow-left"></i> Back
+            </a>
+        </div>
     </div>
 </div>
 

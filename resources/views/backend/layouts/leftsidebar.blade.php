@@ -299,38 +299,40 @@ $allPermissionNames = $allPermissions->pluck('name')->toArray();
                     </ul>
                 </li>
                 @endif
-                @if (count(array_intersect(['gift-policies', 'gifts'], $allPermissionNames)) > 0)
-                <li class="{{ in_array(Route::currentRouteName(), ['admin.lottery.index' ]) ? 'active' : '' }}">
+                
+                <li class="{{ request()->routeIs('admin.lotteries.*', 'admin.lottery-gifts.*') ? 'active' : '' }}">
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="fa fa-gift" aria-hidden="true"></i>
                         <span>Lottery Management</span>
                     </a>
                     <ul>
-
+                       
                         <li>
-                            <a href="{{ route('admin.gift-policies.index') }}"
-                                class="{{ request()->routeIs('admin.gift-policies.*') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('admin.lottery-gifts.index') }}"
+                                class="{{ request()->routeIs('admin.lottery-gifts.*') ? 'active-submenu' : '' }}">
                                 <span>Lottery Gifts </span>
                             </a>
                         </li>
+                        
 
-
+                        
                         <li>
                             <a href="{{ route('admin.lotteries.index') }}"
                                 class="{{ request()->routeIs('admin.lotteries.*') ? 'active-submenu' : '' }}">
                                 <span>Lotteries</span>
                             </a>
                         </li>
+                        
 
                         <li>
-                            <a href="{{ route('admin.gift.transactions.index') }}"
-                                class="{{ request()->routeIs('admin.gift.transactions.*') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('admin.lottery-winners.index') }}"
+                                class="{{ request()->is('admin/lottery-winners*') ? 'active-submenu' : '' }}">
                                 <span>Lottery Winners </span>
                             </a>
                         </li>
                     </ul>
                 </li>
-                @endif
+                
 
                 @if (in_array("sms-send", $allPermissionNames))
                 <li class="has-sub {{ request()->routeIs('admin.sms.*') ? 'active' : '' }}">

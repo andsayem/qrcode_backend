@@ -25,8 +25,6 @@ use App\Http\Controllers\Backend\TechnicianNomineeController;
 use App\Http\Controllers\Backend\Gift\GiftPolicyController;
 use App\Http\Controllers\Backend\Gift\GiftController;
 use App\Http\Controllers\Backend\Gift\GiftTransactionController;
-use App\Http\Controllers\Backend\Lottery\LotteryController;
-use App\Http\Controllers\Backend\Lottery\LotteryGiftAssignController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -228,36 +226,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     });
 
 
-    // lotteries  
-    Route::resource('lotteries', LotteryController::class, ['names' => 'admin.lotteries']);
-
-    // Gift assign page
-    Route::get(
-        'lotteries-gift-assign/{lottery}',
-        [LotteryGiftAssignController::class, 'index']
-    )->name('admin.lottery-gift-assign.index');
-
-    Route::post(
-        'lotteries-gift-assign/{lottery}',
-        [LotteryGiftAssignController::class, 'store']
-    )->name('admin.lottery-gift-assign.store');
-
-    Route::delete(
-        'lottery-gift-assign/{id}',
-        [LotteryGiftAssignController::class, 'destroy']
-    )->name('admin.lottery-gift-assign.destroy');
-
-
-    // 🎯 Draw page (GET)
-    Route::get('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
-        ->name('admin.lotteries.draw');
-
-    // 🎯 Draw next winner (POST)
-    Route::post('lotteries/{lottery}/draw-next', [LotteryController::class, 'drawNext'])
-        ->name('admin.lotteries.draw-next');
-
-    Route::get('lotteries/{lottery}/draw-next', [LotteryController::class, 'drawNext']);
 });
+
 
 
 Route::get('/district-update-division', [UserController::class, 'districtUpdateDivisionWise']);
@@ -290,3 +260,5 @@ Route::get('/clear-all', function () {
     $exitCode = Artisan::call('config:cache');
     echo  '<h1>Clear Config cleared</h1>';
 });
+
+require __DIR__.'/lottery.php';

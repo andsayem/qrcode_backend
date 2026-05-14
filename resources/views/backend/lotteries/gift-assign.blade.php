@@ -10,12 +10,22 @@
         <div class="col-lg-6">
             <h2>Gift Assign - {{ $lottery->title }}</h2>
         </div>
+        <div class="col-lg-6 text-right">
+            <a href="{{ route('admin.lotteries.index') }}" class="btn btn-secondary">
+                <i class="fa fa-arrow-left"></i> Back
+            </a>
+        </div>
     </div>
 </div>
 
 <div class="card">
     <div class="body">
 
+        @if($lottery->status === 'completed')
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> This lottery is completed. Gift assignments can no longer be modified.
+            </div>
+        @else
         <form action="{{ route('admin.lottery-gift-assign.store', $lottery->id) }}" method="POST">
             @csrf
 
@@ -62,6 +72,7 @@
                 </button>
 
         </form>
+        @endif
 
         <hr>
 
@@ -93,7 +104,7 @@
 
                         <td>
                             @if($item->gift && $item->gift->gift_image)
-                            <img src="{{ asset('storage/' . $item->gift->gift_image) }}"
+                            <img src="{{ asset('uploads/lottery_gifts/' . $item->gift->gift_image) }}"
                                 width="40" height="40">
                             @else
                             N/A

@@ -90,9 +90,9 @@
                             @if($lottery->status == 'pending')
                             <span class="badge badge-secondary">Pending</span>
                             @elseif($lottery->status == 'running')
-                            <span class="badge badge-success">Running</span>
+                            <span class="badge badge-warning">Running</span>
                             @else
-                            <span class="badge badge-dark">Completed</span>
+                            <span class="badge badge-success">Completed</span>
                             @endif
                         </td>
 
@@ -114,18 +114,20 @@
 
                                 <i class="fa fa-play"></i> Draw
                             </a>
-                            <!-- Edit -->
-                            <a href="{{ route('admin.lotteries.edit', $lottery->id) }}"
-                                class="btn btn-outline-info btn-sm mr-2">
-                                <i class="fa fa-edit"></i>
-                            </a>
+                            @if($lottery->status !== 'completed')
+                                <!-- Edit -->
+                                <a href="{{ route('admin.lotteries.edit', $lottery->id) }}"
+                                    class="btn btn-outline-info btn-sm mr-2">
+                                    <i class="fa fa-edit"></i>
+                                </a>
 
-                            <!-- Gift Assign -->
-                            <a href="{{ route('admin.lottery-gift-assign.index', ['lottery' => $lottery->id]) }}"
-                                class="btn btn-outline-success btn-sm mr-2"
-                                title="Gift Assign">
-                                <i class="fa fa-gift"></i>
-                            </a>
+                                <!-- Gift Assign -->
+                                <a href="{{ route('admin.lottery-gift-assign.index', ['lottery' => $lottery->id]) }}"
+                                    class="btn btn-outline-success btn-sm mr-2"
+                                    title="Gift Assign">
+                                    <i class="fa fa-gift"></i>
+                                </a>
+                            
 
                             <!-- Delete -->
                             <form action="{{ route('admin.lotteries.destroy', $lottery->id) }}" method="POST"
@@ -137,6 +139,7 @@
                                     <i class="fa fa-trash"></i>
                                 </button>
                             </form>
+                            @endif
 
                         </td>
 

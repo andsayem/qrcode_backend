@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\LotteryGiftAssign;
 use App\Models\LotteryWinner;
 use App\Models\User;
+use App\Models\UserPoint;
 
 class LotteryController extends Controller
 {
@@ -53,6 +54,7 @@ class LotteryController extends Controller
             'from_date'        => 'required|date',
             'to_date'          => 'required|date|after_or_equal:from_date',
             'required_points'  => 'required|integer|min:0',
+            'total_winners'    => 'required|integer|min:1',
             'status'           => 'required|in:pending,running,completed',
         ]);
 
@@ -61,6 +63,7 @@ class LotteryController extends Controller
             'from_date'        => $request->from_date,
             'to_date'          => $request->to_date,
             'required_points'  => $request->required_points,
+            'total_winners'    => $request->total_winners,
             'status'           => $request->status,
             'current_position' => 0,
             'started_at'       => $request->status == 'running'
@@ -78,7 +81,9 @@ class LotteryController extends Controller
 
     public function drawPage(Lottery $lottery)
     {
-        $lottery->load(['giftAssignments.gift', 'winners']);
+        $lottery->load(['giftAssignments.gift', 'winners' => function ($query) {
+            $query->orderBy('position', 'asc')->with('giftAssign.gift');
+        }]);
 
         return view('backend.lotteries.draw', compact('lottery'));
     }
@@ -96,6 +101,9 @@ class LotteryController extends Controller
      */
     public function edit(Lottery $lottery)
     {
+        if ($lottery->status === 'completed') {
+            return redirect()->route('admin.lotteries.index')->with('error', 'Completed lotteries cannot be edited.');
+        }
         return view('backend.lotteries.edit', compact('lottery'));
     }
 
@@ -104,11 +112,16 @@ class LotteryController extends Controller
      */
     public function update(Request $request, Lottery $lottery)
     {
+        if ($lottery->status === 'completed') {
+            return redirect()->route('admin.lotteries.index')->with('error', 'Completed lotteries cannot be updated.');
+        }
+
         $request->validate([
             'title'            => 'required|string|max:255',
             'from_date'        => 'required|date',
             'to_date'          => 'required|date|after_or_equal:from_date',
             'required_points'  => 'required|integer|min:0',
+            'total_winners'    => 'required|integer|min:1',
             'status'           => 'required|in:pending,running,completed',
         ]);
 
@@ -128,6 +141,7 @@ class LotteryController extends Controller
             'from_date'        => $request->from_date,
             'to_date'          => $request->to_date,
             'required_points'  => $request->required_points,
+            'total_winners'    => $request->total_winners,
             'status'           => $request->status,
             'started_at'       => $startedAt,
             'completed_at'     => $completedAt,
@@ -143,6 +157,9 @@ class LotteryController extends Controller
      */
     public function destroy(Lottery $lottery)
     {
+        if ($lottery->status === 'completed') {
+            return redirect()->route('admin.lotteries.index')->with('error', 'Completed lotteries cannot be deleted.');
+        }
         $lottery->delete();
 
         return redirect()
@@ -152,7 +169,9 @@ class LotteryController extends Controller
     // 🎯 DRAW PAGE
     public function draw(Lottery $lottery)
     {
-        $lottery->load('winners.giftAssign.gift');
+        $lottery->load(['winners' => function ($query) {
+            $query->orderBy('position', 'asc')->with('giftAssign.gift');
+        }]);
 
         return view('backend.lotteries.draw', compact('lottery'));
     }
@@ -160,6 +179,16 @@ class LotteryController extends Controller
     // 🎯 DRAW NEXT WINNER
     public function drawNext(Lottery $lottery)
     {
+        // Prevent drawing if another lottery is currently running
+        $runningLotteryExists = Lottery::where('status', 'running')
+                                       ->where('id', '!=', $lottery->id)
+                                       ->exists();
+
+        if ($runningLotteryExists) {
+            return back()->with('error', 'Another lottery is currently running. Please wait for it to complete before drawing from this lottery.');
+        }
+
+
         $current = $lottery->current_position ?? 0;
 
         // stop condition
@@ -167,7 +196,8 @@ class LotteryController extends Controller
             return back()->with('error', 'All winners already drawn!');
         }
 
-        $nextPosition = $current + 1;
+        // Calculate position in reverse (e.g., if total is 15 and 0 drawn, next is 15)
+        $nextPosition = $lottery->total_winners - $current;
 
         // get gift for position
         $giftAssign = LotteryGiftAssign::where('lottery_id', $lottery->id)
@@ -178,8 +208,29 @@ class LotteryController extends Controller
             return back()->with('error', 'No gift assigned for this position!');
         }
 
-        // random user (replace with real logic later)
-        $user = User::inRandomOrder()->first();
+        // 1. Find eligible user IDs who earned required points within the lottery period
+        $eligibleUserIds = UserPoint::select('user_id')
+            ->whereBetween('created_at', [
+                $lottery->from_date->startOfDay(),
+                $lottery->to_date->endOfDay()
+            ])
+            ->groupBy('user_id')
+            ->havingRaw('SUM(point) >= ?', [$lottery->required_points])
+            ->pluck('user_id');
+
+        // 2. Pick a random user from the eligible pool who hasn't won in this lottery yet
+        $user = User::whereNotIn('id', function ($query) use ($lottery) {
+                $query->select('user_id')
+                    ->from('lottery_winners')
+                    ->where('lottery_id', $lottery->id);
+            })
+            ->whereIn('id', $eligibleUserIds)
+            ->inRandomOrder()
+            ->first();
+
+        if (!$user) {
+            return back()->with('error', 'No more eligible users found for the draw!');
+        }
 
         // save winner
         LotteryWinner::create([
@@ -188,14 +239,27 @@ class LotteryController extends Controller
             'user_id' => $user->id,
             'position' => $nextPosition,
             'winner_name' => $user->name,
-            'mobile_no' => $user->mobile_no ?? 'N/A',
+            'mobile_no' => $user->email ?? $user->phone_number ?? 'N/A',
             'draw_time' => now(),
         ]);
 
-        // update position
-        $lottery->update([
-            'current_position' => $nextPosition
-        ]);
+        // Prepare update data
+        $updateData = [
+            'current_position' => $current + 1 // Increment the count of winners drawn
+        ];
+
+        // Auto-update status based on progress
+        if ($lottery->status === 'pending') {
+            $updateData['status'] = 'running';
+            $updateData['started_at'] = now();
+        }
+
+        if (($current + 1) >= $lottery->total_winners) {
+            $updateData['status'] = 'completed';
+            $updateData['completed_at'] = now();
+        }
+
+        $lottery->update($updateData);
 
         return back()->with('success', '🎉 Winner Drawn Successfully!');
     }
