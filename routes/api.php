@@ -70,7 +70,7 @@ Route::group([
     Route::post('/redeem', [GiftTransactionController::class, 'redeemApi']);
 
     // Authenticated Lottery Routes
-    
+
 
 
     // Technician Nominee API

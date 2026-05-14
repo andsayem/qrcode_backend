@@ -23,13 +23,13 @@ class LotteryApiController extends Controller
                 ->where(function ($query) {
                     $query->where(function ($q) {
                         $q->where('status', 'running')
-                          ->where('current_position', '>', 0); // Only running lotteries with at least one draw
+                            ->where('current_position', '>', 0); // Only running lotteries with at least one draw
                     })
                         ->orWhere(function ($q) {
                             // Allow the completed lottery to be visible for a 60-second window
                             // so the app can fetch and display the final winner board.
                             $q->where('status', 'completed')
-                              ->where('completed_at', '>=', now()->subSeconds(60));
+                                ->where('completed_at', '>=', now()->subSeconds(60));
                         });
                 })
                 ->latest('updated_at')
@@ -65,8 +65,8 @@ class LotteryApiController extends Controller
                     return [
                         'position' => $ga->position,
                         'gift_name' => $ga->gift->gift_name ?? 'N/A',
-                        'gift_image' => ($ga->gift && $ga->gift->gift_image) 
-                            ? asset('uploads/lottery_gifts/' . $ga->gift->gift_image) 
+                        'gift_image' => ($ga->gift && $ga->gift->gift_image)
+                            ? asset('uploads/lottery_gifts/' . $ga->gift->gift_image)
                             : null,
                     ];
                 }),
@@ -99,21 +99,18 @@ class LotteryApiController extends Controller
 
     public function history(Request $request)
     {
-        // -----------------------------------------------------------------------
-        // DETAIL VIEW — user selected a specific lottery
-        // GET /api/lotteries/history?lottery_id=12
-        // -----------------------------------------------------------------------
+
         if ($request->filled('lottery_id')) {
-    
+
             $lottery = Lottery::find($request->lottery_id);
-    
+
             if (!$lottery) {
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'Lottery not found.',
                 ], 404);
             }
-    
+
             // Only show completed lotteries in history
             if ($lottery->current_position < $lottery->total_winners) {
                 return response()->json([
@@ -121,25 +118,25 @@ class LotteryApiController extends Controller
                     'message' => 'This lottery has not completed yet.',
                 ], 422);
             }
-    
+
             $winners = LotteryWinner::where('lottery_id', $lottery->id)
                 ->with(['giftAssign.gift', 'user'])
-                ->orderBy('position', 'asc')   
+                ->orderBy('position', 'asc')
                 ->get();
-    
+
             return response()->json([
                 'status' => 'success',
-    
+
                 // Upper section — lottery info card
                 'lottery' => [
                     'id'           => $lottery->id,
                     'title'        => $lottery->title,
-                    'total_winners'=> $lottery->total_winners,
+                    'total_winners' => $lottery->total_winners,
                     'completed_at' => $lottery->updated_at
-                                        ? $lottery->updated_at->format('d M Y, h:i A')
-                                        : 'N/A',
+                        ? $lottery->updated_at->format('d M Y, h:i A')
+                        : 'N/A',
                 ],
-    
+
                 // Lower section — winner list table
                 // Columns: SL | User ID | Winner Name | Mobile No | Gift | Winning Position
                 'winner_list' => $winners->values()->map(function ($winner, $index) {
@@ -147,11 +144,11 @@ class LotteryApiController extends Controller
                         ?: ($winner->user->phone_number
                             ?? $winner->user->email
                             ?? 'N/A');
-    
+
                     $masked = (strlen($mobile) >= 6)
                         ? substr($mobile, 0, 3) . '****' . substr($mobile, -3)
                         : $mobile;
-    
+
                     return [
                         'sl'               => $index + 1,                        // row number
                         'user_id'          => $winner->user_id,
@@ -161,46 +158,46 @@ class LotteryApiController extends Controller
                         'winning_position' => $winner->position,
                         'position_label'   => $this->ordinal($winner->position) . ' place',
                         'draw_time'        => $winner->draw_time
-                                                ? $winner->draw_time->format('d M Y, h:i A')
-                                                : 'N/A',
+                            ? $winner->draw_time->format('d M Y, h:i A')
+                            : 'N/A',
                     ];
                 }),
             ]);
         }
-    
+
         // -----------------------------------------------------------------------
         // LIST VIEW — show all completed lotteries for selection
         // GET /api/lotteries/history
         // -----------------------------------------------------------------------
-    
+
         // Derive completed: current_position = total_winners
         // No status column — use column comparison
         $lotteries = Lottery::whereColumn('current_position', 'total_winners')
             ->where('total_winners', '>', 0)     // exclude lotteries never started
             ->latest('updated_at')
             ->paginate(10);
-    
+
         $lotteries->getCollection()->transform(function ($lottery) {
-    
+
             // Get position 1 winner (grand prize) for the preview card
             $topWinner = LotteryWinner::where('lottery_id', $lottery->id)
                 ->where('position', 1)
                 ->with(['giftAssign.gift'])
                 ->first();
-    
+
             return [
                 'id'           => $lottery->id,
                 'title'        => $lottery->title,
-                'total_winners'=> $lottery->total_winners,
+                'total_winners' => $lottery->total_winners,
                 'completed_at' => $lottery->updated_at
-                                    ? $lottery->updated_at->format('d M Y')
-                                    : 'N/A',
+                    ? $lottery->updated_at->format('d M Y')
+                    : 'N/A',
                 // Preview info for the lottery card in the list
-                'top_winner'   => $topWinner?->winner_name ?? 'N/A',
-                'top_gift'     => $topWinner?->giftAssign?->gift?->gift_name ?? 'N/A',
+                'top_winner'   => $topWinner ? $topWinner->winner_name : 'N/A',
+                'top_gift'     => $topWinner && $topWinner->giftAssign && $topWinner->giftAssign->gift ? $topWinner->giftAssign->gift->gift_name : 'N/A',
             ];
         });
-    
+
         return response()->json([
             'status' => 'success',
             'data'   => $lotteries,
@@ -211,7 +208,7 @@ class LotteryApiController extends Controller
 
     private function ordinal($n)
     {
-        $suffix = ['th','st','nd','rd'];
+        $suffix = ['th', 'st', 'nd', 'rd'];
         $v = $n % 100;
         if ($v >= 11 && $v <= 13) {
             return $n . 'th';
@@ -219,5 +216,4 @@ class LotteryApiController extends Controller
         $idx = $n % 10;
         return $n . ($suffix[$idx] ?? $suffix[0]);
     }
-    
 }
