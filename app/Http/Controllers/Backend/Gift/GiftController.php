@@ -63,6 +63,7 @@ class GiftController extends Controller
 
         // default value fix
         $data['is_point_cut'] = $request->is_point_cut ?? 1;
+        $data['max_redeem_limit'] = $request->max_redeem_limit ?? null;
 
         // image upload
         if ($request->hasFile('image')) {
@@ -134,6 +135,7 @@ class GiftController extends Controller
         ]);
 
         $data['is_point_cut'] = $request->is_point_cut ?? 1;
+        $data['max_redeem_limit'] = $request->max_redeem_limit ?? null;
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');

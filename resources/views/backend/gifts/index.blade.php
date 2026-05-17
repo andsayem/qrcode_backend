@@ -55,11 +55,13 @@
 
                 <thead>
                     <tr>
+                        <th>Gift Code</th>
                         <th>Policy</th>
                         <th>Gift Name</th>
                         <th>Point Slab</th>
                         <th>Type</th>
                         <th>Point Cut</th>
+                        <th>Max Redeem Limit</th>
                         <th>Image</th>
                         <th>Action</th>
                     </tr>
@@ -68,79 +70,86 @@
                 <tbody>
 
                     @forelse ($gifts as $gift)
-                        <tr>
+                    <tr>
+                        <td>{{ $gift->id }}</td>
 
-                            <!-- Policy -->
-                            <td>
-                                {{ $gift->policy->program_name ?? 'N/A' }}
-                            </td>
+                        <!-- Policy -->
+                        <td>
+                            {{ $gift->policy->program_name ?? 'N/A' }}
+                        </td>
 
-                            <!-- Gift Name -->
-                            <td>{{ $gift->gift_name }}</td>
+                        <!-- Gift Name -->
+                        <td>{{ $gift->gift_name }}</td>
 
-                            <!-- Point Slab -->
-                            <td>{{ $gift->point_slab }}</td>
+                        <!-- Point Slab -->
+                        <td>{{ $gift->point_slab }}</td>
 
-                            <!-- Gift Type -->
-                            <td>
-                                @if($gift->policy_type == 'instant')
-                                    <span class="badge badge-success">Instant</span>
-                                @else
-                                    <span class="badge badge-warning">Year End</span>
-                                @endif
-                            </td>
 
-                            <!-- Point Cut -->
-                            <td>
-                                @if($gift->is_point_cut)
-                                    <span class="badge badge-danger">Yes</span>
-                                @else
-                                    <span class="badge badge-secondary">No</span>
-                                @endif
-                            </td>
+                        <!-- Gift Type -->
+                        <td>
+                            @if($gift->policy_type == 'instant')
+                            <span class="badge badge-success">Instant</span>
+                            @else
+                            <span class="badge badge-warning">Year End</span>
+                            @endif
+                        </td>
 
-                            <!-- Image -->
-                            <td>
-                                @if($gift->image)
-                                    <img src="{{ asset('storage/' . $gift->image) }}"
-                                         width="50" height="50"
-                                         style="object-fit: cover; border-radius: 6px;">
-                                @else
-                                    N/A
-                                @endif
-                            </td>
+                        <!-- Point Cut -->
+                        <td>
+                            @if($gift->is_point_cut)
+                            <span class="badge badge-danger">Yes</span>
+                            @else
+                            <span class="badge badge-secondary">No</span>
+                            @endif
+                        </td>
 
-                            <!-- Action -->
-                            <td>
+                        <td>
+                            {{ $gift->max_redeem_limit ?? 'N/A' }}
+                        </td>
 
-                                @can('gift-edit')
-                                    <a href="{{ route('admin.gifts.edit', $gift->id) }}"
-                                       class="btn btn-outline-info btn-sm mr-2">
-                                        <i class="fa fa-edit"></i>
-                                    </a>
-                                @endcan
+                        <!-- Image -->
+                        <td>
+                            @if($gift->image)
+                            <img src="{{ asset('storage/' . $gift->image) }}"
+                                width="50" height="50"
+                                style="object-fit: cover; border-radius: 6px;">
+                            @else
+                            N/A
+                            @endif
+                        </td>
 
-                                @can('gift-delete')
-                                    <form action="{{ route('admin.gifts.destroy', $gift->id) }}"
-                                          method="POST"
-                                          style="display:inline-block;">
-                                        @csrf
-                                        @method('DELETE')
 
-                                        <button class="btn btn-outline-danger btn-sm"
-                                                onclick="return confirm('Are you sure?')">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </form>
-                                @endcan
+                        <!-- Action -->
+                        <td>
 
-                            </td>
 
-                        </tr>
+                            <a href="{{ route('admin.gifts.edit', $gift->id) }}"
+                                class="btn btn-outline-info btn-sm mr-2">
+                                <i class="fa fa-edit"></i>
+                            </a>
+
+
+
+                            <form action="{{ route('admin.gifts.destroy', $gift->id) }}"
+                                method="POST"
+                                style="display:inline-block;">
+                                @csrf
+                                @method('DELETE')
+
+                                <button class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Are you sure?')">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </form>
+
+
+                        </td>
+
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="text-center">No data found</td>
-                        </tr>
+                    <tr>
+                        <td colspan="7" class="text-center">No data found</td>
+                    </tr>
                     @endforelse
 
                 </tbody>

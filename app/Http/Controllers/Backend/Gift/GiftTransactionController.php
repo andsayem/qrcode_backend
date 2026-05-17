@@ -300,7 +300,7 @@ class GiftTransactionController extends Controller
     {
         $request->validate([
             'gift_id' => 'required|exists:gifts,id',
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         $user = auth()->user();
