@@ -303,8 +303,8 @@ class GiftTransactionController extends Controller
             'user_id' => 'nullable|exists:users,id',
         ]);
 
-        // $user = auth()->user();
-        $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
+        $user = auth()->user();
+        //$user = \App\Models\User::with('technician')->findOrFail($request->user_id);
         $gift = Gift::findOrFail($request->gift_id);
 
         $technician = Technician::where('user_id', $user->id)->first();
