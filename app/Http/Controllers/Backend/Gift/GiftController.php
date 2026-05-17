@@ -45,6 +45,7 @@ class GiftController extends Controller
             'policy_type'     => 'required|in:instant,year_end',
             'gift_type' => 'required|in:payment_gateway,physical_gift',
             'is_point_cut'  => 'nullable|boolean',
+            'max_redeem_limit' => 'nullable|integer|min:0',
             'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|dimensions:width=720,height=400',
         ], [
             'image.dimensions' => 'The gift image must be exactly 720x400 pixels.',
@@ -56,7 +57,8 @@ class GiftController extends Controller
             'gift_name',
             'policy_type',
             'gift_type',
-            'is_point_cut'
+            'is_point_cut',
+            'max_redeem_limit'
         ]);
 
         // default value fix
@@ -115,6 +117,7 @@ class GiftController extends Controller
             'policy_type'     => 'required|in:instant,year_end',
             'gift_type' => 'required|in:payment_gateway,physical_gift',
             'is_point_cut'  => 'nullable|boolean',
+            'max_redeem_limit' => 'nullable|integer|min:0',
             'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp|dimensions:width=720,height=400',
         ], [
             'image.dimensions' => 'The gift image must be exactly 720x400 pixels.',
@@ -126,7 +129,8 @@ class GiftController extends Controller
             'gift_name',
             'policy_type',
             'gift_type',
-            'is_point_cut'
+            'is_point_cut',
+            'max_redeem_limit'
         ]);
 
         $data['is_point_cut'] = $request->is_point_cut ?? 1;
