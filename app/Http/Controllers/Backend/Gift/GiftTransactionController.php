@@ -303,9 +303,9 @@ class GiftTransactionController extends Controller
             'user_id' => 'nullable|exists:users,id',
         ]);
 
-
-        $user = $request->user_id ? \App\Models\User::find($request->user_id) : auth()->user();
-        $gift = Gift::select('gifts.*')->with('policy')->where('id', $request->gift_id)->first();
+        $user = auth()->user();
+        // $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
+        $gift = Gift::findOrFail($request->gift_id);
 
         $technician = Technician::where('user_id', $user->id)->first();
 
@@ -316,31 +316,16 @@ class GiftTransactionController extends Controller
             ], 404);
         }
 
-        // 1. Policy Frequency Check
-        // Year-end gifts can only be collected once per year.
-        // Instant gifts have no frequency limit and can be collected as long as points are available.
-
-
-        // if ($gift->policy_type === 'year_end') {
-        $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
-            ->where('gift_id', $gift->id)
-            ->whereBetween('requested_at', [$gift->policy->start_date, $gift->policy->end_date])
-            ->whereIn('request_status', [0, 1])
-            ->count();
-
-
-
-        if ($alreadyRedeemed >= $gift->max_redeem_limit) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This gift has already been requested in this period.'
-            ], 400);
-        }
-        //}
-
-        // LOCKED System (If Point Cut is set to No in form)
-        if ($gift->is_point_cut == 0) {
-            // Calculate total points locked by all previous redemptions using the locked system
+        // 1. Point Balance Validation (Check points first as requested)
+        if ($gift->is_point_cut != 0) {
+            if ($technician->current_point < $gift->point_slab) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Insufficient points available for this gift. Balance: {$technician->current_point} points, Required: {$gift->point_slab} points."
+                ], 400);
+            }
+        } else {
+            // LOCKED System (If Point Cut is set to No in form)
             $totalLockedPoints = GiftTransaction::join('gifts', 'gift_transactions.gift_id', '=', 'gifts.id')
                 ->where('gift_transactions.user_id', $user->id)
                 ->where('gifts.is_point_cut', 0)
@@ -353,6 +338,50 @@ class GiftTransactionController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => "Insufficient available points. You have {$availableForUse} points free for this gift."
+                ], 400);
+            }
+        }
+
+        // 2. Only apply payment gateway validations if the gift type is 'payment_gateway'
+        if ($gift->gift_type === 'payment_gateway') {
+            // Specifically check if Nagad (2) or Rocket (3) is saved in the technician table
+            if (in_array($technician->payment_gateway, [2, 3])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Currently only bKash is supported. Please change your payment gateway to bKash and provide a valid bKash number in your profile.'
+                ], 200);
+            }
+
+            // General check to ensure bKash (1) is configured and number is available
+            if ($technician->payment_gateway != 1 || empty($technician->gatway_number)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please set your Payment Gateway to bKash and provide a valid number in your profile.'
+                ], 200);
+            }
+
+            // Validate gateway number format (11 digits)
+            $number = preg_replace('/^\+?88/', '', $technician->gatway_number);
+            if (strlen($number) != 11 || !ctype_digit($number)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your bKash number must be exactly 11 digits.'
+                ], 200);
+            }
+        }
+
+        // 3. Policy Frequency Check
+        if ($gift->policy_type === 'year_end') {
+            $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
+                ->where('gift_id', $gift->id)
+                ->whereYear('requested_at', now()->year)
+                ->whereIn('request_status', [0, 1])
+                ->exists();
+
+            if ($alreadyRedeemed) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This year-end gift has already been requested this year.'
                 ], 400);
             }
         }
