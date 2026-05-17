@@ -303,8 +303,8 @@ class GiftTransactionController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $user = auth()->user();
-        // $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
+        // $user = auth()->user();
+        $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
         $gift = Gift::findOrFail($request->gift_id);
 
         $technician = Technician::where('user_id', $user->id)->first();
@@ -371,19 +371,19 @@ class GiftTransactionController extends Controller
         }
 
         // 3. Policy Frequency Check
-        if ($gift->policy_type === 'year_end') {
-            $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
-                ->where('gift_id', $gift->id)
-                ->whereYear('requested_at', now()->year)
-                ->whereIn('request_status', [0, 1])
-                ->exists();
+        $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
+            ->where('gift_id', $gift->id)
+            ->whereBetween('requested_at', [$gift->policy->start_date, $gift->policy->end_date])
+            ->whereIn('request_status', [0, 1])
+            ->count();
 
-            if ($alreadyRedeemed) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This year-end gift has already been requested this year.'
-                ], 400);
-            }
+
+
+        if ($alreadyRedeemed >= $gift->max_redeem_limit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This gift has already been requested in this period.'
+            ], 400);
         }
 
         DB::beginTransaction();
