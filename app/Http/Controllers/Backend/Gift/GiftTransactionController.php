@@ -304,7 +304,7 @@ class GiftTransactionController extends Controller
         ]);
 
         $user = auth()->user();
-        //$user = \App\Models\User::with('technician')->findOrFail($request->user_id);
+        // $user = \App\Models\User::with('technician')->findOrFail($request->user_id);
         $gift = Gift::findOrFail($request->gift_id);
 
         $technician = Technician::where('user_id', $user->id)->first();
@@ -371,19 +371,19 @@ class GiftTransactionController extends Controller
         }
 
         // 3. Policy Frequency Check
-        $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
-            ->where('gift_id', $gift->id)
-            ->whereBetween('requested_at', [$gift->policy->start_date, $gift->policy->end_date])
-            ->whereIn('request_status', [0, 1])
-            ->count();
+        if ($gift->max_redeem_limit !== null && $gift->max_redeem_limit > 0) {
+            $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
+                ->where('gift_id', $gift->id)
+                ->whereBetween('requested_at', [$gift->policy->start_date, $gift->policy->end_date])
+                ->whereIn('request_status', [0, 1])
+                ->count();
 
-
-
-        if ($alreadyRedeemed >= $gift->max_redeem_limit) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This gift has already been requested in this period.'
-            ], 400);
+            if ($alreadyRedeemed >= $gift->max_redeem_limit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "You have reached the maximum redemption limit of {$gift->max_redeem_limit} for this gift in the current period."
+                ], 400);
+            }
         }
 
         DB::beginTransaction();
