@@ -371,17 +371,17 @@ class GiftTransactionController extends Controller
         }
 
         // 3. Policy Frequency Check
-        if ($gift->policy_type === 'year_end') {
+        if ($gift->max_redeem_limit !== null && $gift->max_redeem_limit > 0) {
             $alreadyRedeemed = GiftTransaction::where('user_id', $user->id)
                 ->where('gift_id', $gift->id)
-                ->whereYear('requested_at', now()->year)
+                ->whereBetween('requested_at', [$gift->policy->start_date, $gift->policy->end_date])
                 ->whereIn('request_status', [0, 1])
-                ->exists();
+                ->count();
 
-            if ($alreadyRedeemed) {
+            if ($alreadyRedeemed >= $gift->max_redeem_limit) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This year-end gift has already been requested this year.'
+                    'message' => "You have reached the maximum redemption limit of {$gift->max_redeem_limit} for this gift in the current period."
                 ], 400);
             }
         }
