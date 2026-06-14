@@ -55,6 +55,7 @@ Route::group([
     Route::get('app_dashboard', [App\Http\Controllers\Api\AppDashboardController::class, 'index']);
     Route::resource('user_redeem_requests', App\Http\Controllers\Api\UserRedeemRequestAPIController::class);
     Route::resource('technicians', App\Http\Controllers\Api\TechnicianAPIController::class);
+
     Route::get('technician_info', [App\Http\Controllers\Api\TechnicianAPIController::class, 'showInfo']);
     Route::get('technician_info_check', [App\Http\Controllers\Api\TechnicianAPIController::class, 'infocheck']);
     Route::get('campaigns', [App\Http\Controllers\Api\TechnicianAPIController::class, 'campaigns']);
@@ -81,6 +82,9 @@ Route::group([
         Route::delete('/delete/{id}', [TechnicianNomineeController::class, 'destroy']); // Delete nominee
     });
 });
+
+//ssforce_technicians
+Route::get('ssforce_technicians', [App\Http\Controllers\Api\TechnicianAPIController::class, 'ssforceTechnicians']);
 Route::get('ssforce_user_redeem_requests', [App\Http\Controllers\Api\UserRedeemRequestAPIController::class, 'ssforceIndex']);
 Route::get('ssforce_user_redeem_requests_blank_gateway_number', [App\Http\Controllers\Api\UserRedeemRequestAPIController::class, 'ssforceUserRedeemRequestsBlankGatewayNumber']);
 Route::post('redeem-request-generate-otp', [App\Http\Controllers\Api\UserRedeemRequestAPIController::class, 'generateOTP']);

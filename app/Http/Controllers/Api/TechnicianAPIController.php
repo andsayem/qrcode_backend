@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 use App\Http\Resources\TechnicianResource;
 use App\Models\User;
-use Response; 
+use Response;
 use Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -39,13 +39,53 @@ class TechnicianAPIController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $technicians = $this->technicianRepository->all(
-            $request->except(['skip', 'limit']),
-            $request->get('skip'),
-            $request->get('limit')
-        );
+        $technicians =  Technician::select('technicians.*', 'users.name', 'users.email', 'users.phone_verification_status')
+            ->join('users', 'users.id', 'technicians.user_id')
+            ->get();
+
         return response()->json(TechnicianResource::collection($technicians), 200);
         // return $this->sendResponse(TechnicianResource::collection($technicians), 'Technicians retrieved successfully');
+    }
+
+    // ssforceTechnicians
+    public function ssforceTechnicians(Request $request)
+    {
+        $query = Technician::select(
+            'technicians.*',
+            'users.name',
+            'users.email',
+            'users.phone_verification_status'
+        )
+            ->join('users', 'users.id', '=', 'technicians.user_id');
+
+        // STATUS FILTER (Active / Inactive)
+        if ($request->filled('status')) {
+            $query->where('users.status', $request->status);
+        }
+
+        // START DATE FILTER
+        if ($request->filled('start_date')) {
+            $query->whereDate('technicians.created_at', '>=', $request->start_date);
+        }
+
+        //ssforce_user_id
+        if ($request->filled('ssforce_user_id')) {
+            $query->where('technicians.tsm_code', $request->ssforce_user_id);
+        }
+
+        // END DATE FILTER
+        if ($request->filled('end_date')) {
+            $query->whereDate('technicians.created_at', '<=', $request->end_date);
+        }
+        if ($request->filled('phone')) {
+            $query->where('users.email', $request->phone);
+        }
+
+        // PAGINATION
+        $query->orderBy('technicians.created_at', 'desc');
+        $technicians = $query->paginate($request->limit ?? 50);
+
+        return $this->sendResponse($technicians, 'Technicians retrieved successfully');
     }
 
 
@@ -90,15 +130,14 @@ class TechnicianAPIController extends AppBaseController
 
     public function details($user_id)
     {
-        $technician = Technician::select('technicians.*','users.name', 'users.email', 'users.phone_verification_status')
-        ->join('users', 'users.id', 'technicians.user_id')
-        ->where('user_id', $user_id)->first();
-            if (empty($technician)) {
-                return $this->sendError('Technician not found');
-            }
+        $technician = Technician::select('technicians.*', 'users.name', 'users.email', 'users.phone_verification_status')
+            ->join('users', 'users.id', 'technicians.user_id')
+            ->where('user_id', $user_id)->first();
+        if (empty($technician)) {
+            return $this->sendError('Technician not found');
+        }
 
-        return $this->sendResponse(  $technician, 'Technician retrieved successfully');
-
+        return $this->sendResponse($technician, 'Technician retrieved successfully');
     }
     public function showInfo()
     {
@@ -162,7 +201,7 @@ class TechnicianAPIController extends AppBaseController
         $phone_number =  $request->phone_number;
         //dd($phone_number);
         if ($phone_number) {
-            $query = User::where('email', $phone_number)->with(['technician'])->first(); 
+            $query = User::where('email', $phone_number)->with(['technician'])->first();
             return $this->sendResponse($query, 'Technician retrieved successfully');
         } else {
             return $this->sendResponse(0, 'Data Not Found');
@@ -304,195 +343,190 @@ class TechnicianAPIController extends AppBaseController
 
         return $this->sendSuccess('Technician deleted successfully');
     }
-// public function checkTechnicianPoint()
-// {
-//     $technicians = DB::table('technicians as t')
-//         ->select(
-//             't.id', // include primary key for update
-//             't.user_id',
-//             't.total_point',
-//             't.current_point',
-//             't.pending_point',
-//             DB::raw("(SELECT COALESCE(SUM(urr.point), 0)
-//                       FROM user_redeem_requests urr
-//                       WHERE urr.user_id = t.user_id
-//                         AND urr.status IN (0, 1, 2)) AS total_redeem_points")
-//         )
-//         ->where('t.total_point', '>', 0)
-//         ->where('t.pending_point', '>', 0)
-//         ->get();
+    // public function checkTechnicianPoint()
+    // {
+    //     $technicians = DB::table('technicians as t')
+    //         ->select(
+    //             't.id', // include primary key for update
+    //             't.user_id',
+    //             't.total_point',
+    //             't.current_point',
+    //             't.pending_point',
+    //             DB::raw("(SELECT COALESCE(SUM(urr.point), 0)
+    //                       FROM user_redeem_requests urr
+    //                       WHERE urr.user_id = t.user_id
+    //                         AND urr.status IN (0, 1, 2)) AS total_redeem_points")
+    //         )
+    //         ->where('t.total_point', '>', 0)
+    //         ->where('t.pending_point', '>', 0)
+    //         ->get();
 
-//     foreach ($technicians as $technician) {
-//         // Debug output
-//         print_r($technician);
-//         echo "Total Redeem Points: " . $technician->total_redeem_points . "\n";
+    //     foreach ($technicians as $technician) {
+    //         // Debug output
+    //         print_r($technician);
+    //         echo "Total Redeem Points: " . $technician->total_redeem_points . "\n";
 
-//         // Update only if total_redeem_points is 0
-//         if ($technician->total_redeem_points == 0 && $technician->pending_point > 0) {
-//             DB::table('technicians')
-//                 ->where('id', $technician->id)
-//                 ->update([
-//                     'current_point' => DB::raw('current_point + pending_point'),
-//                     'pending_point' => 0
-//                 ]);
-//         }elseif($technician->pending_point > 0 && $technician->total_redeem_points > 0 ){
+    //         // Update only if total_redeem_points is 0
+    //         if ($technician->total_redeem_points == 0 && $technician->pending_point > 0) {
+    //             DB::table('technicians')
+    //                 ->where('id', $technician->id)
+    //                 ->update([
+    //                     'current_point' => DB::raw('current_point + pending_point'),
+    //                     'pending_point' => 0
+    //                 ]);
+    //         }elseif($technician->pending_point > 0 && $technician->total_redeem_points > 0 ){
 
-//             if($technician->total_redeem_points == ( $technician->total_point - $technician->current_point)){
-                
-//                  $p_point = DB::table('user_redeem_requests')
-//                     ->where('user_id', $technician->user_id)
-//                     ->whereIn('status', [0, 2])
-//                     ->sum('point');
+    //             if($technician->total_redeem_points == ( $technician->total_point - $technician->current_point)){
 
-//                 // Update the technician's pending_point
-//                 DB::table('technicians')
-//                     ->where('id', $technician->id)
-//                     ->update([ 
-//                         'pending_point' => $p_point
-//                     ]);
+    //                  $p_point = DB::table('user_redeem_requests')
+    //                     ->where('user_id', $technician->user_id)
+    //                     ->whereIn('status', [0, 2])
+    //                     ->sum('point');
 
-                
-//             }else if(($technician->current_point + $technician->pending_point) == $technician->total_point ){
-//                 if(($technician->current_point + $technician->pending_point) != $technician->total_redeem_points){
-//                     if($technician->pending_point > $technician->total_redeem_points ){
-//                           $p_point = DB::table('user_redeem_requests')
-//                             ->where('user_id', $technician->user_id)
-//                             ->whereIn('status', [0, 2])
-//                             ->sum('point');
+    //                 // Update the technician's pending_point
+    //                 DB::table('technicians')
+    //                     ->where('id', $technician->id)
+    //                     ->update([ 
+    //                         'pending_point' => $p_point
+    //                     ]);
 
 
-//                         DB::table('technicians')
-//                         ->where('id', $technician->id)
-//                         ->update([
-//                             'current_point' => DB::raw("current_point + pending_point - $p_point"),
-//                             'pending_point' => $p_point
-//                         ]);
-//                     }else{
-
-//                          $p_point = DB::table('user_redeem_requests')
-//                             ->where('user_id', $technician->user_id)
-//                             ->whereIn('status', [0, 2])
-//                             ->sum('point');
-
-//                                DB::table('technicians')
-//                                 ->where('id', $technician->id)
-//                                 ->update([
-//                                     'current_point' => DB::raw("total_point - $technician->total_redeem_points  "),
-//                                     'pending_point' => $p_point
-//                                 ]);
+    //             }else if(($technician->current_point + $technician->pending_point) == $technician->total_point ){
+    //                 if(($technician->current_point + $technician->pending_point) != $technician->total_redeem_points){
+    //                     if($technician->pending_point > $technician->total_redeem_points ){
+    //                           $p_point = DB::table('user_redeem_requests')
+    //                             ->where('user_id', $technician->user_id)
+    //                             ->whereIn('status', [0, 2])
+    //                             ->sum('point');
 
 
+    //                         DB::table('technicians')
+    //                         ->where('id', $technician->id)
+    //                         ->update([
+    //                             'current_point' => DB::raw("current_point + pending_point - $p_point"),
+    //                             'pending_point' => $p_point
+    //                         ]);
+    //                     }else{
 
-//                     }
-//                 }
-//             }else{
-                
+    //                          $p_point = DB::table('user_redeem_requests')
+    //                             ->where('user_id', $technician->user_id)
+    //                             ->whereIn('status', [0, 2])
+    //                             ->sum('point');
 
-//                          $p_point = DB::table('user_redeem_requests')
-//                             ->where('user_id', $technician->user_id)
-//                             ->whereIn('status', [0, 2])
-//                             ->sum('point');
+    //                                DB::table('technicians')
+    //                                 ->where('id', $technician->id)
+    //                                 ->update([
+    //                                     'current_point' => DB::raw("total_point - $technician->total_redeem_points  "),
+    //                                     'pending_point' => $p_point
+    //                                 ]);
 
-//                                DB::table('technicians')
-//                                 ->where('id', $technician->id)
-//                                 ->update([
-//                                     'current_point' => DB::raw("total_point - $technician->total_redeem_points  "),
-//                                     'pending_point' => $p_point
-//                                 ]);
 
-//             }
 
-//         } 
-//     }
+    //                     }
+    //                 }
+    //             }else{
 
-//     return $technicians;
-// }
-public function checkTechnicianPoint()
-{
-    $technicians = DB::table('technicians')
-        ->select(
-            'id',
-            'user_id',
-            'total_point',
-            'current_point',
-            'pending_point',
-            DB::raw("(SELECT COALESCE(SUM(urr.point), 0)
+
+    //                          $p_point = DB::table('user_redeem_requests')
+    //                             ->where('user_id', $technician->user_id)
+    //                             ->whereIn('status', [0, 2])
+    //                             ->sum('point');
+
+    //                                DB::table('technicians')
+    //                                 ->where('id', $technician->id)
+    //                                 ->update([
+    //                                     'current_point' => DB::raw("total_point - $technician->total_redeem_points  "),
+    //                                     'pending_point' => $p_point
+    //                                 ]);
+
+    //             }
+
+    //         } 
+    //     }
+
+    //     return $technicians;
+    // }
+    public function checkTechnicianPoint()
+    {
+        $technicians = DB::table('technicians')
+            ->select(
+                'id',
+                'user_id',
+                'total_point',
+                'current_point',
+                'pending_point',
+                DB::raw("(SELECT COALESCE(SUM(urr.point), 0)
                       FROM user_redeem_requests urr
                       WHERE urr.user_id = technicians.user_id
                         AND urr.status IN (0, 1, 2)) AS total_redeem_points")
-        )
-        ->where('total_point', '>', 0)
-        ->where('pending_point', '>', 0)
-        ->get();
+            )
+            ->where('total_point', '>', 0)
+            ->where('pending_point', '>', 0)
+            ->get();
 
-    foreach ($technicians as $technician) {
-        $request_point = $technician->total_point - $technician->current_point;
+        foreach ($technicians as $technician) {
+            $request_point = $technician->total_point - $technician->current_point;
 
-        // Sum of pending redeem requests (status 0 or 2) for this user
-        $p_point = DB::table('user_redeem_requests')
-            ->where('user_id', $technician->user_id)
-            ->whereIn('status', [0, 2])
-            ->sum('point');
+            // Sum of pending redeem requests (status 0 or 2) for this user
+            $p_point = DB::table('user_redeem_requests')
+                ->where('user_id', $technician->user_id)
+                ->whereIn('status', [0, 2])
+                ->sum('point');
 
-        // Case 1: No redeemed points yet
-        if ($technician->total_redeem_points == 0 && $technician->pending_point > 0) {
-            DB::table('technicians')
-                ->where('id', $technician->id)
-                ->update([
-                    'current_point' => DB::raw('total_point'),
-                    'pending_point' => 0
-                ]);
+            // Case 1: No redeemed points yet
+            if ($technician->total_redeem_points == 0 && $technician->pending_point > 0) {
+                DB::table('technicians')
+                    ->where('id', $technician->id)
+                    ->update([
+                        'current_point' => DB::raw('total_point'),
+                        'pending_point' => 0
+                    ]);
+            }
+            // Case 2: All requested points have been redeemed
+            elseif ($technician->total_redeem_points == $request_point) {
+                DB::table('technicians')
+                    ->where('id', $technician->id)
+                    ->update([
+                        'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
+                        'pending_point' => $p_point
+                    ]);
+            }
+            // Case 3: Current + pending equals total_point, adjust based on redeem points
+            elseif (($technician->current_point + $technician->pending_point) == $technician->total_point) {
+
+                print_r($technician->id);
+                echo '<br>'; // use <br> for HTML line break, not <per>
+
+
+                // $new_current = ($technician->pending_point > $technician->total_redeem_points)
+                //     ? $technician->current_point + $technician->pending_point - $technician->total_redeem_points
+                //     : $technician->total_point - $technician->total_redeem_points;
+
+                DB::table('technicians')
+                    ->where('id', $technician->id)
+                    ->update([
+                        'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
+                        'pending_point' => $p_point
+                    ]);
+            }
+            // Case 4: Default adjustment for pending points
+            elseif (($technician->total_point - $technician->current_point) == $technician->total_redeem_points) {
+                DB::table('technicians')
+                    ->where('id', $technician->id)
+                    ->update([
+                        'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
+                        'pending_point' => $p_point
+                    ]);
+            } else {
+                DB::table('technicians')
+                    ->where('id', $technician->id)
+                    ->update([
+                        'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
+                        'pending_point' => $p_point
+                    ]);
+            }
         }
-        // Case 2: All requested points have been redeemed
-        elseif ($technician->total_redeem_points == $request_point) {
-            DB::table('technicians')
-                ->where('id', $technician->id)
-                ->update([
-                    'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
-                    'pending_point' => $p_point
-                ]);
-        } 
-        // Case 3: Current + pending equals total_point, adjust based on redeem points
-        elseif (($technician->current_point + $technician->pending_point) == $technician->total_point) {
 
-            print_r($technician->id) ;
-              echo '<br>'; // use <br> for HTML line break, not <per>
-
-            
-            // $new_current = ($technician->pending_point > $technician->total_redeem_points)
-            //     ? $technician->current_point + $technician->pending_point - $technician->total_redeem_points
-            //     : $technician->total_point - $technician->total_redeem_points;
-
-            DB::table('technicians')
-                ->where('id', $technician->id)
-                ->update([
-                    'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
-                    'pending_point' => $p_point
-                ]);
-        } 
-        // Case 4: Default adjustment for pending points
-         elseif(($technician->total_point - $technician->current_point ) == $technician->total_redeem_points){
-             DB::table('technicians')
-                ->where('id', $technician->id)
-                ->update([
-                    'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
-                    'pending_point' => $p_point
-                ]);
-        }
-        else {
-            DB::table('technicians')
-                ->where('id', $technician->id)
-                ->update([
-                    'current_point' => DB::raw("total_point - {$technician->total_redeem_points}"),
-                    'pending_point' => $p_point
-                ]);
-        }
+        //  return $technicians;
     }
-
-  //  return $technicians;
-}
-
-
-
-
 }
