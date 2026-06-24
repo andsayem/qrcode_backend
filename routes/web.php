@@ -118,6 +118,15 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     )->name('admin.user_point_monthly.download');
 
     Route::get('pending_redeem', [RedeemController::class, 'pending_redeem'])->name('admin.redeem.pending_redeem');
+
+
+    Route::get('pending_points', [RedeemController::class, 'pending_points'])->name('admin.redeem.pending_points');
+
+    //pending_points_download
+    Route::get('pending_points_download', [RedeemController::class, 'pending_points_download'])->name('admin.redeem.pending_points_download');
+
+
+
     Route::get('pending_redeem_list', [RedeemController::class, 'pending_redeem_list'])->name('admin.redeem.pending_redeem_list');
     Route::get('pending_redeem_delete/{id}', [RedeemController::class, 'pending_redeem_delete'])->name('admin.redeem.pending_redeem_delete');
     Route::post('approval_redeem', [RedeemController::class, 'approval_redeem'])->name('admin.redeem.approval');
@@ -224,8 +233,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
 
         Route::post('/transactions/bulk-send', [GiftTransactionController::class, 'bulkSend'])->name('transactions.bulk_send');
     });
-
-
 });
 
 
@@ -261,4 +268,4 @@ Route::get('/clear-all', function () {
     echo  '<h1>Clear Config cleared</h1>';
 });
 
-require __DIR__.'/lottery.php';
+require __DIR__ . '/lottery.php';

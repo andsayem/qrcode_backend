@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use Rap2hpoutre\FastExcel\FastExcel;
-use Carbon\Carbon; 
+use Carbon\Carbon;
 use App\Exports\UserPointMonthlyExport;
 
 use App\Http\Controllers\Backend\UserController;
@@ -199,13 +199,13 @@ class RedeemController extends Controller
     }
     public function user_point_monthly_download(Request $request)
     {
-            $startMonth = $request->get('start_month');
-            $endMonth   = $request->get('end_month');
+        $startMonth = $request->get('start_month');
+        $endMonth   = $request->get('end_month');
 
-            return Excel::download(
-                new UserPointMonthlyExport($startMonth, $endMonth),
-                'user_point_monthly.xlsx'
-            );
+        return Excel::download(
+            new UserPointMonthlyExport($startMonth, $endMonth),
+            'user_point_monthly.xlsx'
+        );
     }
     public function user_point(Request $request)
     {
@@ -722,6 +722,62 @@ class RedeemController extends Controller
         $data['items'] = UserRedeemRequest::where('status', 0)->with('user')->get();
         return view('backend.redeem.pending_list')->with($data);
     }
+
+    // pending_points  
+    public function pending_points(Request $request)
+    {
+        $data['items'] = DB::table('technicians_old_policy')
+            ->where('current_point', '>', 0)
+            ->join('users', 'users.id', '=', 'technicians_old_policy.user_id')
+            ->select(
+                'technicians_old_policy.*',
+                'users.name as user_name',
+                'users.email'
+            )
+            ->paginate(10);
+
+        return view('backend.redeem.pending_points')->with($data);
+    }
+
+
+
+    public function pending_points_download(Request $request)
+    {
+        $items = DB::table('technicians_old_policy')
+            ->where('current_point', '>', 0)
+            ->join('users', 'users.id', '=', 'technicians_old_policy.user_id')
+            ->select(
+                'technicians_old_policy.*',
+                'users.name as user_name',
+                'users.email'
+            )
+            ->get();
+
+        $gateways = [
+            1 => 'bKash',
+            2 => 'Nagad',
+            3 => 'Rocket'
+        ];
+
+        $list = $items->map(function ($item, $key) use ($gateways) {
+
+            return [
+                'SL' => $key + 1,
+                'User ID' => $item->user_id,
+                'Technician' => $item->user_name . ' (' . $item->email . ')',
+                'Point' => $item->current_point,
+                'Amount (BDT)' => $item->current_point / 4,
+                'Payment Gateway' => $gateways[$item->payment_gateway] ?? '',
+                'Gateway Number' => $item->gatway_number,
+                'Join Date' => $item->created_at,
+            ];
+        });
+
+        return (new FastExcel($list))
+            ->download('pending-points-list-' . time() . '.xlsx');
+    }
+
+    //pending_points_download
     public function pending_redeem_delete(Request $request, $id)
     {
         $item = UserRedeemRequest::find($id);

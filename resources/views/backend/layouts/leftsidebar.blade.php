@@ -173,7 +173,12 @@ $allPermissionNames = $allPermissions->pluck('name')->toArray();
                                 <span>Pending Redeem</span>
                             </a>
                         </li>
-                        @endif
+                        <li>
+                            <a href="{{ route('admin.redeem.pending_points') }}"
+                                class="{{ Route::currentRouteName() == 'admin.redeem.pending_points' ? 'active-submenu' : '' }}">
+                                <span>Pending Points</span>
+                            </a>
+                            @endif
                     </ul>
                 </li>
                 @endif
@@ -299,30 +304,30 @@ $allPermissionNames = $allPermissions->pluck('name')->toArray();
                     </ul>
                 </li>
                 @endif
-                
+
                 <li class="{{ request()->routeIs('admin.lotteries.*', 'admin.lottery-gifts.*') ? 'active' : '' }}">
                     <a href="javascript: void(0);" class="has-arrow">
                         <i class="fa fa-gift" aria-hidden="true"></i>
                         <span>Lottery Management</span>
                     </a>
                     <ul>
-                       
+
                         <li>
                             <a href="{{ route('admin.lottery-gifts.index') }}"
                                 class="{{ request()->routeIs('admin.lottery-gifts.*') ? 'active-submenu' : '' }}">
                                 <span>Lottery Gifts </span>
                             </a>
                         </li>
-                        
 
-                        
+
+
                         <li>
                             <a href="{{ route('admin.lotteries.index') }}"
                                 class="{{ request()->routeIs('admin.lotteries.*') ? 'active-submenu' : '' }}">
                                 <span>Lotteries</span>
                             </a>
                         </li>
-                        
+
 
                         <li>
                             <a href="{{ route('admin.lottery-winners.index') }}"
@@ -332,7 +337,7 @@ $allPermissionNames = $allPermissions->pluck('name')->toArray();
                         </li>
                     </ul>
                 </li>
-                
+
 
                 @if (in_array("sms-send", $allPermissionNames))
                 <li class="has-sub {{ request()->routeIs('admin.sms.*') ? 'active' : '' }}">
