@@ -176,7 +176,7 @@ $allPermissionNames = $allPermissions->pluck('name')->toArray();
                         <li>
                             <a href="{{ route('admin.redeem.pending_points') }}"
                                 class="{{ Route::currentRouteName() == 'admin.redeem.pending_points' ? 'active-submenu' : '' }}">
-                                <span>Pending Points</span>
+                                <span>Pending Points (Old Policy)</span>
                             </a>
                             @endif
                     </ul>
