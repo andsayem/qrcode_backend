@@ -6,10 +6,10 @@
 @section('content')
 
 <?php
-    $scs_keys =  App\Utilities\Enum\SSGCodeStatusEnum::getKeys();
-    $scs_values =  App\Utilities\Enum\SSGCodeStatusEnum::getValues();
-    $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
-    // dd($scs_keys_values);
+$scs_keys =  App\Utilities\Enum\SSGCodeStatusEnum::getKeys();
+$scs_values =  App\Utilities\Enum\SSGCodeStatusEnum::getValues();
+$scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
+// dd($scs_keys_values);
 ?>
 <!-- start page title -->
 <div class="block-header">
@@ -42,21 +42,21 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="code" class="mb-2">Code</label>
-                            {!! Form::text('code', request('code') ?? '',['class'=>'form-control ',  'placeholder'=>'Code'])!!}
+                            {!! Form::text('code', request('code') ?? '',['class'=>'form-control ', 'placeholder'=>'Code'])!!}
                         </div>
                     </div>
 
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="serial" class="mb-2">Serial</label>
-                            {!! Form::text('serial', request('serial') ?? '',['class'=>'form-control ',  'placeholder'=>'Serial'])!!}
+                            {!! Form::text('serial', request('serial') ?? '',['class'=>'form-control ', 'placeholder'=>'Serial'])!!}
                         </div>
                     </div>
 
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="mobile" class="mb-2">Mobile</label>
-                            {!! Form::text('mobile', request('mobile') ?? '',['class'=>'form-control',  'placeholder'=>'Mobile'])!!}
+                            {!! Form::text('mobile', request('mobile') ?? '',['class'=>'form-control', 'placeholder'=>'Mobile'])!!}
                         </div>
                     </div>
 
@@ -93,15 +93,10 @@
         <div class="row align-items-center">
             <div class="col-lg-6">
                 <h2>
-                    SSG Code List
-                    <span class="badge badge-info fill"> {{ $ssgcodes->total() }}</span>
+                    SSG Code List </span>
                 </h2>
             </div>
-            <div class="col-lg-6 text-right">
-                @can('ssg-code-upload')
-                    <a role="button" href="#"   data-toggle="modal" data-target="#upload_modal" class="btn btn-sm btn-info px-3"><i class="fa fa-upload mr-2"></i> <span>Upload</span></a>
-                @endcan
-            </div>
+
         </div>
     </div>
     <div class="body pt-0">
@@ -123,68 +118,61 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if ($ssgcodes->count()>0)
-                        @foreach ($ssgcodes as $i =>  $ssgcode)
-                            <tr>
-                                <td>
-                                    {{ ($ssgcode->product->sku ?? ''). ' ('.($ssgcode->product->product_name ?? '').')' }}
-                                </td>
-                                <td>{{ $ssgcode->serial }}</td>
-                                <td>{{ substr_replace($ssgcode->code,'********',3,8) }}</td>
-                                <td>
-                                    @include('includes.status', ['status' => [['key' => $scs_keys[0], 'value' => $scs_values[0], 'class'=> 'badge-danger'], ['key' => $scs_keys[1], 'value' => $scs_values[1], 'class'=> 'badge-success']], 'selected'=> $ssgcode->status])
-                                </td>
-                                <td>{{ $ssgcode->total_used }}</td>
-                                <td>{{ $ssgcode->uploader->name ?? '' }}</td>
-                                <td>{{ $ssgcode->uploaded_ip }}</td>
-                                <td>{{ $ssgcode->mobile }}</td>
-                                <td>{{ $ssgcode->address }}</td> 
-                                <td>{{ $ssgcode->updated_at ? $ssgcode->updated_at->format('d-m-Y') : '' }}</td> 
-                                <td>{{ $ssgcode->lat }} - {{ $ssgcode->long }}</td> 
-                            </tr>
-                        @endforeach
-                    @endif
+                    @forelse($ssgcodes as $ssgcode)
+                    <tr>
+                        <td>
+                            {{ ($ssgcode->product->sku ?? '') }}
+                            ({{ $ssgcode->product->product_name ?? '' }})
+                        </td>
+
+                        <td>{{ $ssgcode->serial }}</td>
+
+                        <td>{{ substr_replace($ssgcode->code,'********',3,8) }}</td>
+
+                        <td>
+                            @include('includes.status', [
+                            'status' => [
+                            ['key' => $scs_keys[0], 'value' => $scs_values[0], 'class'=> 'badge-danger'],
+                            ['key' => $scs_keys[1], 'value' => $scs_values[1], 'class'=> 'badge-success']
+                            ],
+                            'selected'=> $ssgcode->status
+                            ])
+                        </td>
+
+                        <td>{{ $ssgcode->total_used }}</td>
+
+                        <td>{{ $ssgcode->uploader->name ?? '' }}</td>
+
+                        <td>{{ $ssgcode->uploaded_ip }}</td>
+
+                        <td>{{ $ssgcode->mobile }}</td>
+
+                        <td>{{ $ssgcode->address }}</td>
+
+                        <td>{{ optional($ssgcode->updated_at)->format('d-m-Y') }}</td>
+
+                        <td>{{ $ssgcode->lat }} - {{ $ssgcode->long }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="11" class="text-center text-danger">
+                            No Data Found
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
 
         </div>
 
-        @include('/includes/paginate', ['paginator' => $ssgcodes])
+
     </div>
 </div>
 
 
 
 {{-- upload modal --}}
-<div class="modal fade" id="upload_modal" tabindex="-1" role="dialog" aria-labelledby="upload_modal" aria-hidden="true" >
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success">
-                <h4 class="modal-title text-center mx-auto text-white" id="upload_modal">Printed Code Upload</h4>
-            </div>
-            <form action="{{ route('admin.ssgcodes.upload') }}" method="post" onsubmit="return confirm('Do you really want to proceed?');"  enctype="multipart/form-data" >
-                @csrf
 
-                <div class="modal-body">
-                    <div class="col-md-12">
-                        <div class="form-group row required">
-                            <label class="col-sm-4 col-form-label control-label">CSV File</label>
-                            <div class="col-sm-8">
-                                {!! Form::file('csv_file',['class' => 'form-control','required' => true,'accept'=>'.csv']) !!}
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary float-right mr-1" data-dismiss="modal">Cancel</button>
-                    <a href="{{ route('code-sample-file.download') }}" class="btn btn-warning mr-2 float-right"><i class="fa fa-download mr-2"></i>Demo Download</a>
-                    <button data-toggle="modal" type="submit" class="btn btn-primary mr-2 float-right" id="formSubmit">Submit</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection
 
 

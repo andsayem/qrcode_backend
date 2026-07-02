@@ -20,77 +20,126 @@ class SSGCodeController extends Controller
 
     public function index(Request $request)
     {
-        if (!auth()->user()->can('request-code-list')) {
-            abort(403);
-        }
-        $ssgcodes = $this->ssgcodeFilterProcess(new Request($request->all()));
-        if($request->status==2){
-            $ssgcodes->orderBy('updated_at','DESC');
-        }else{
-           $ssgcodes->orderBy('id', 'desc');
-        } 
-        $data['ssgcodes'] = $ssgcodes->paginate(10);
+        abort_unless(auth()->user()->can('request-code-list'), 403);
 
-        return view('backend.ssgcode.index')->with($data);
-    } 
-    public function ssgcodeFilterProcess(Request $request)
-    {
-        $ssgcodes = SSGCodeDetail::with(['product', 'uploader']);
-        
-           // ->orderBy('id', 'desc');
+        $ssgcodes = $this->ssgcodeFilterProcess($request);
 
-        if (isset($request->code)) {
-            $ssgcodes = $ssgcodes->where('code', 'like', '%' . $request->code . '%');
+        if ((int)$request->status === 2) {
+            $ssgcodes->orderByDesc('updated_at')
+                ->orderByDesc('id');
+        } else {
+            $ssgcodes->orderByDesc('total_used');
         }
 
-        if (isset($request->serial)) {
-            $ssgcodes = $ssgcodes->where('serial', 'like', '%' . $request->serial . '%');
-        }
-
-        if (isset($request->mobile)) {
-            $ssgcodes = $ssgcodes->where('mobile', 'like', '%' . $request->mobile . '%');
-        }
-
-        if (isset($request->status)) {
-            if($request->status==2){
-                $ssgcodes = $ssgcodes->where('total_used', '>', 1);
-            }else{
-                $ssgcodes = $ssgcodes->where('status', $request->status);
-            } 
-        }
-
-        return $ssgcodes;
+        return view('backend.ssgcode.index', [
+            'ssgcodes' => $ssgcodes->limit(100)->get()
+        ]);
     }
 
+    public function ssgcodeFilterProcess(Request $request)
+    {
+        $query = SSGCodeDetail::query()
+            ->select([
+                'id',
+                'product_id',
+                'uploaded_by',
+                'serial',
+                'code',
+                'status',
+                'total_used',
+                'uploaded_ip',
+                'mobile',
+                'address',
+                'lat',
+                'long',
+                'updated_at',
+            ])
+            ->with([
+                'product:id,sku,product_name',
+                'uploader:id,name',
+            ]);
 
-    public function verifiedProduct(Request $request){
-        if (!auth()->user()->can('request-code-list')) {
-            abort(403);
+        if ($request->filled('code')) {
+            $query->where('code', $request->code);
+            // অথবা partial search লাগলে:
+            // $query->where('code', 'like', $request->code.'%');
         }
-        $ssgcodes = SSGCodeDetail::with(['product', 'user.technician'])
-            ->whereHas('user') 
-            ->where('total_used', 1);  
 
-        if (isset($request->code)) {
-            $ssgcodes = $ssgcodes->where('ssg_code_details.code', 'like', '%' . $request->code . '%');
+        if ($request->filled('serial')) {
+            $query->where('serial', $request->serial);
         }
 
-        if (isset($request->serial)) {
-            $ssgcodes = $ssgcodes->where('ssg_code_details.serial', 'like', '%' . $request->serial . '%');
+        if ($request->filled('mobile')) {
+            $query->where('mobile', $request->mobile);
         }
 
-        if (isset($request->mobile)) {
-            $ssgcodes = $ssgcodes->where('ssg_code_details.mobile', 'like', '%' . $request->mobile . '%');
-        } 
-        $ssgcodes->orderBy('ssg_code_details.id', 'desc');
-        // $ssgcodes->limit(5);
-        // $ddd = $ssgcodes->get();
-        // dd($ddd->toArray());
-            
-        $data['ssgcodes'] = $ssgcodes->paginate(10);
-        // dd( $data['ssgcodes']);
+        if ($request->filled('status')) {
+            if ((int)$request->status === 2) {
+                $query->where('total_used', '>', 1);
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
 
-        return view('backend.ssgcode.verified-product')->with($data);
+        return $query;
+    }
+    public function verifiedProduct(Request $request)
+    {
+        abort_unless(auth()->user()->can('request-code-list'), 403);
+
+        $ssgcodes = SSGCodeDetail::query()
+            ->select([
+                'id',
+                'product_id',
+                'uploaded_by',
+                'serial',
+                'code',
+                'status',
+                'total_used',
+                'uploaded_ip',
+                'mobile',
+                'address',
+                'lat',
+                'long',
+                'updated_at',
+            ])
+            ->with([
+                'product:id,sku,product_name',
+                'uploader:id,name',
+                'user',
+                'user.technician',
+            ])
+            ->whereHas('user');
+        // ->where('total_used', 1);
+
+        if ($request->filled('code')) {
+            // Exact search (recommended)
+            $ssgcodes->where('code', $request->code);
+
+            // যদি partial search লাগে
+            // $ssgcodes->where('code', 'like', $request->code.'%');
+        }
+
+        if ($request->filled('serial')) {
+            $ssgcodes->where('serial', $request->serial);
+
+            // অথবা
+            // $ssgcodes->where('serial', 'like', $request->serial.'%');
+        }
+
+        if ($request->filled('mobile')) {
+            $ssgcodes->where('mobile', $request->mobile);
+
+            // অথবা
+            // $ssgcodes->where('mobile', 'like', $request->mobile.'%');
+        }
+
+        $data['ssgcodes'] = $ssgcodes
+            ->orderByDesc('total_used')
+            ->limit(100)
+            ->get();
+
+        return view('backend.ssgcode.verified-product', $data);
     }
 
 
@@ -214,7 +263,7 @@ class SSGCodeController extends Controller
             }
         }
 
-        if(count($dataResult) > 0){
+        if (count($dataResult) > 0) {
             RequestCode::where('id', $id)->update(['print_status' => 2]);
         }
         return redirect()->back()->with('success', ['Successfully uploaded ' . count($dataResult)  . ' rows']);
