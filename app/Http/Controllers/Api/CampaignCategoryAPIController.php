@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\API\CreateCampaignCategoryAPIRequest;
 use App\Http\Requests\API\UpdateCampaignCategoryAPIRequest;

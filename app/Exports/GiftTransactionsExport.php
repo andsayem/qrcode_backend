@@ -51,24 +51,55 @@ class GiftTransactionsExport implements FromCollection, WithHeadings
         }
 
         // Fetch the data with related fields
+        // return $query->get()->map(function ($transaction) {
+        //     return [
+        //         'ID' => $transaction->id,
+        //         'User Name' => $transaction->user->name ?? 'N/A',
+        //         'Gift' => $transaction->gift->gift_name ?? 'N/A',
+        //         'Policy' => $transaction->policy->program_name ?? 'N/A',
+        //         'Request Date' => $transaction->requested_at
+        //             ? \Carbon\Carbon::parse($transaction->requested_at)->format('d M Y')
+        //             : 'N/A',
+        //         'Request Status' => match ($transaction->request_status) {
+        //             0 => 'Pending',
+        //             1 => 'Approved',
+        //             2 => 'Rejected',
+        //             default => 'Unknown',
+        //         },
+        //         'Delivery Status' => ucfirst($transaction->delivery_status),
+        //     ];
+        // });
+
+
         return $query->get()->map(function ($transaction) {
+            $statuses = [
+                0 => 'Pending',
+                1 => 'Approved',
+                2 => 'Rejected',
+            ];
+
             return [
+
                 'ID' => $transaction->id,
+
                 'User Name' => $transaction->user->name ?? 'N/A',
+
                 'Gift' => $transaction->gift->gift_name ?? 'N/A',
+
                 'Policy' => $transaction->policy->program_name ?? 'N/A',
+
                 'Request Date' => $transaction->requested_at
                     ? \Carbon\Carbon::parse($transaction->requested_at)->format('d M Y')
                     : 'N/A',
-                'Request Status' => match ($transaction->request_status) {
-                    0 => 'Pending',
-                    1 => 'Approved',
-                    2 => 'Rejected',
-                    default => 'Unknown',
-                },
-                'Delivery Status' => ucfirst($transaction->delivery_status),
+
+                'Request Status' => $statuses[$transaction->request_status] ?? 'Unknown',
+
+                'Delivery Status' => ucfirst($transaction->delivery_status ?? 'N/A'),
+
             ];
+
         });
+
     }
 
     public function headings(): array
