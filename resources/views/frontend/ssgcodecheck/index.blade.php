@@ -62,6 +62,9 @@
               which is just under the barcode</p>
 
                 {{ Form::open(['route' => 'checkCodeURLValidate','id'=>'roles-form']) }}
+                    {{ Form::hidden('lat', '', ['id' => 'lat']) }}
+                    {{ Form::hidden('long', '', ['id' => 'long']) }}
+
                     <div class="mb-3">
                         <label for="mobile" class="form-label">Mobile Number</label>
                         {{Form::text('mobile', '', ['class' => 'form-control numberOnlyInput', 'placeholder' => 'Enter Mobile Number',  'aria-describedby'=>'mobile', 'min' => 2, 'autocomplete'=>'off','pattern'=> '(^(\+88|0088|88)?(01){1}[3456789]{1}(\d){8})$', 'oninvalid' => 'this.setCustomValidity("Enter valid mobile no")', 'oninput' => 'this.setCustomValidity("")'])}}
@@ -115,6 +118,52 @@
         if(!(e.keyCode >=48 && e.keyCode <=57) ){
             e.preventDefault();
         }
+    });
+
+    // Resolve once, either with coordinates or without (denied/unavailable/timed out).
+    var locationPromise = new Promise(function (resolve) {
+        if (!navigator.geolocation) {
+            resolve();
+            return;
+        }
+
+        var settled = false;
+        var settle = function () {
+            if (settled) return;
+            settled = true;
+            resolve();
+        };
+
+        navigator.geolocation.getCurrentPosition(function (position) {
+            document.getElementById('lat').value = position.coords.latitude;
+            document.getElementById('long').value = position.coords.longitude;
+            settle();
+        }, settle, {
+            enableHighAccuracy: true,
+            timeout: 8000,
+            maximumAge: 0
+        });
+
+        // Safety net in case getCurrentPosition never calls back (seen on some browsers).
+        setTimeout(settle, 9000);
+    });
+
+    var locationReady = false;
+    locationPromise.then(function () {
+        locationReady = true;
+    });
+
+    var form = document.getElementById('roles-form');
+    form.addEventListener('submit', function (e) {
+        if (locationReady) {
+            return;
+        }
+        // Hold the submit until we know whether we have coordinates or not,
+        // so lat/long aren't sent blank just because the user submitted quickly.
+        e.preventDefault();
+        locationPromise.then(function () {
+            form.submit();
+        });
     });
 </script>
 

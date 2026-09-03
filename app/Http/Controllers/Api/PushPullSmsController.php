@@ -75,9 +75,13 @@ class PushPullSmsController extends Controller
         $codeVerifyLog->product_id = $ssgCodeDetail->product_id ?? null;
         $codeVerifyLog->mobile_no = $request->msisdn ?? null;
         $codeVerifyLog->code = trim(substr($request->sms, 3)) ?? null;
+        $codeVerifyLog->code_id = $ssgCodeDetail->id ?? null;
         $codeVerifyLog->requested_ip = $request->ip() ?? null;
         $codeVerifyLog->sms = $request->sms ?? null;
         $codeVerifyLog->status = $status ?? null;
+        $codeVerifyLog->lat = $request->lat ?? null;
+        $codeVerifyLog->long = $request->long ?? null;
+        $codeVerifyLog->address = $request->address ?? null;
         $codeVerifyLog->save();
     }
 }

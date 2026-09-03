@@ -142,6 +142,7 @@
                             <th>ID</th>
                             <th>User</th>
                             <th>Gift</th>
+                            <th>Point</th>
                             <th>Policy</th>
                             <th>Request Date</th>
                             <th>Request Status</th>
@@ -190,6 +191,11 @@
                                     <span class="badge badge-info">
                                         {{ $item->gift->gift_name ?? 'N/A' }}
                                     </span>
+                                </td>
+
+                                {{-- POINT --}}
+                                <td>
+                                    {{ $item->gift->point_slab ?? 'N/A' }}
                                 </td>
 
                                 {{-- POLICY --}}
@@ -287,7 +293,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">
+                                <td colspan="9" class="text-center">
                                     No transactions found
                                 </td>
                             </tr>

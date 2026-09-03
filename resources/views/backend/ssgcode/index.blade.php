@@ -139,7 +139,9 @@ $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
                             ])
                         </td>
 
-                        <td>{{ $ssgcode->total_used }}</td>
+                        <td>
+                            <a href="{{ route('admin.ssgcodes.scan-logs', $ssgcode->id) }}">{{ $ssgcode->total_used }}</a>
+                        </td>
 
                         <td>{{ $ssgcode->uploader->name ?? '' }}</td>
 

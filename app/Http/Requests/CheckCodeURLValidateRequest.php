@@ -27,6 +27,8 @@ class CheckCodeURLValidateRequest extends FormRequest
         return [
             'mobile' => 'required|min:11|regex:/^(?:\+?88)?01[3-9]\d{8}$/|numeric' ,
             'code' => 'required|string|min:14',
+            'lat' => 'nullable|string',
+            'long' => 'nullable|string',
         ];
     }
 
