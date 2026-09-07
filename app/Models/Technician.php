@@ -94,8 +94,19 @@ class Technician extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
     public function division()
     {
         return $this->belongsTo(GeoDivision::class, 'division_id');
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(GeoDistrict::class, 'district_id');
+    }
+
+    public function thana()
+    {
+        return $this->belongsTo(GeoUpazila::class, 'upazilla_id');
     }
 }

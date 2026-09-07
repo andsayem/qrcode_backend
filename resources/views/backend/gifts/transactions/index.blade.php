@@ -140,7 +140,13 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>User ID</th>
                             <th>User</th>
+                            <th>Gatway Number</th>
+                            <th>Gatway Type</th>
+                            <th>Point Name</th>
+                            <th>Thana</th>
+                            <th>District</th>
                             <th>Gift</th>
                             <th>Point</th>
                             <th>Policy</th>
@@ -179,6 +185,8 @@
                                     <span class="badge badge-dark">#{{ $item->id }}</span>
                                 </td>
 
+                                <td>{{$item->user?->technician?->user_id}}</td>
+
                                 {{-- USER --}}
                                 <td>
                                     <b>{{ $item->user->name ?? '-' }}</b><br>
@@ -186,12 +194,28 @@
                                     <small>{{ $item->user->phone ?? '-' }}</small>
                                 </td>
 
+                                <td>{{$item->user?->technician?->gatway_number}}</td>
+                                <td>
+                                    @if ($item->user?->technician?->payment_gateway == 1)
+                                        <span class="badge badge-secondary"> BKash</span>
+                                    @elseif ($item->user?->technician?->payment_gateway == 2)
+                                        <span class="badge badge-secondary"> Nagad</span>
+                                    @elseif ($item->user?->technician?->payment_gateway == 3)
+                                        <span class="badge badge-secondary"> Rocket</span>
+                                    @endif
+                                </td>
+                                <td>{{$item->user?->technician?->point_name}}</td>
+                                <td>{{$item->user?->technician?->thana?->thana}}</td>
+                                <td>{{$item->user?->technician?->district?->district}}</td>
+
                                 {{-- GIFT --}}
                                 <td>
                                     <span class="badge badge-info">
                                         {{ $item->gift->gift_name ?? 'N/A' }}
                                     </span>
                                 </td>
+
+
 
                                 {{-- POINT --}}
                                 <td>

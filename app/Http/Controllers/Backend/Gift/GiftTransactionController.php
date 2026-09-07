@@ -19,7 +19,8 @@ class GiftTransactionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = GiftTransaction::with(['user', 'gift', 'policy']);
+        
+        $query = GiftTransaction::with(['user', 'gift', 'policy','user.technician','user.technician.district','user.technician.thana']);
 
         // 👤 User filter (name/email/phone)
         if ($request->user) {
@@ -59,8 +60,11 @@ class GiftTransactionController extends Controller
 
         $transactions = $query->latest()->paginate(20);
 
+        //dd($transactions);
+
         // keep filter data in pagination
         $transactions->appends($request->all());
+
 
         // dropdown data (better performance than calling in blade)
         $gifts = \App\Models\Gift::select('id', 'gift_name')->get();
@@ -71,7 +75,7 @@ class GiftTransactionController extends Controller
             'gifts',
             'policies',
             'status'
-        ));
+        )); 
     }
     /**
      * Export gift transactions to Excel

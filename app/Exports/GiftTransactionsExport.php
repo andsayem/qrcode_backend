@@ -16,7 +16,7 @@ class GiftTransactionsExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $query = GiftTransaction::with(['user', 'gift', 'policy']);
+        $query = GiftTransaction::with(['user', 'gift', 'policy','user.technician','user.technician.district','user.technician.thana']);
 
         // Apply filters
         if (!empty($this->filters['user'])) {
@@ -78,11 +78,27 @@ class GiftTransactionsExport implements FromCollection, WithHeadings
                 2 => 'Rejected',
             ];
 
+            if ($transaction->user?->technician?->payment_gateway == 1){
+                $gateway_type = "BKash";
+            }else if($transaction->user?->technician?->payment_gateway == 2){
+                $gateway_type = "Nagad";
+            }else if($transaction->user?->technician?->payment_gateway == 3){
+                $gateway_type = "Rocket";
+            }            
+
             return [
 
                 'ID' => $transaction->id,
+                
+                "User ID" => $transaction->user->id ?? 'N/A',
 
                 'User Name' => $transaction->user->name ?? 'N/A',
+                
+                'Gatway Number' => $transaction->user?->technician?->gatway_number ?? 'N/A',
+                'Gatway Type' => $gateway_type ?? 'N/A',
+                'Point Name' => $transaction->user?->technician?->point_name ?? 'N/A',
+                'Thana' => $transaction->user?->technician?->thana?->thana ?? 'N/A',
+                'District' => $transaction->user?->technician?->district?->district ?? 'N/A',
 
                 'Gift' => $transaction->gift->gift_name ?? 'N/A',
                 'Point' => $transaction->gift->point_slab ?? 'N/A',
@@ -106,7 +122,13 @@ class GiftTransactionsExport implements FromCollection, WithHeadings
     {
         return [
             'ID',
+            'User ID',
             'User Name',
+            'Gatway Number',
+            'Gatway Type',
+            'Point Name',
+            'Thana',
+            'District',
             'Gift',
             'Point',
             'Policy',
