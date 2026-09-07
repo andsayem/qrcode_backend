@@ -72,45 +72,74 @@ class GiftTransactionsExport implements FromCollection, WithHeadings
 
 
         return $query->get()->map(function ($transaction) {
+
             $statuses = [
                 0 => 'Pending',
                 1 => 'Approved',
                 2 => 'Rejected',
             ];
 
-            if ($transaction->user?->technician?->payment_gateway == 1){
-                $gateway_type = "BKash";
-            }else if($transaction->user?->technician?->payment_gateway == 2){
-                $gateway_type = "Nagad";
-            }else if($transaction->user?->technician?->payment_gateway == 3){
-                $gateway_type = "Rocket";
-            }            
+            $gateway_type = 'N/A';
+
+            $payment_gateway = optional(
+                optional($transaction->user)->technician
+            )->payment_gateway;
+
+            if ($payment_gateway == 1) {
+                $gateway_type = 'BKash';
+            } elseif ($payment_gateway == 2) {
+                $gateway_type = 'Nagad';
+            } elseif ($payment_gateway == 3) {
+                $gateway_type = 'Rocket';
+            }
 
             return [
 
                 'ID' => $transaction->id,
-                
-                "User ID" => $transaction->user->id ?? 'N/A',
 
-                'User Name' => $transaction->user->name ?? 'N/A',
-                
-                'Gatway Number' => $transaction->user?->technician?->gatway_number ?? 'N/A',
-                'Gatway Type' => $gateway_type ?? 'N/A',
-                'Point Name' => $transaction->user?->technician?->point_name ?? 'N/A',
-                'Thana' => $transaction->user?->technician?->thana?->thana ?? 'N/A',
-                'District' => $transaction->user?->technician?->district?->district ?? 'N/A',
+                'User ID' => optional($transaction->user)->id ?? 'N/A',
 
-                'Gift' => $transaction->gift->gift_name ?? 'N/A',
-                'Point' => $transaction->gift->point_slab ?? 'N/A',
-                'Policy' => $transaction->policy->program_name ?? 'N/A',
+                'User Name' => optional($transaction->user)->name ?? 'N/A',
+
+                'Gatway Number' => optional(
+                    optional($transaction->user)->technician
+                )->gatway_number ?? 'N/A',
+
+                'Gatway Type' => $gateway_type,
+
+                'Point Name' => optional(
+                    optional($transaction->user)->technician
+                )->point_name ?? 'N/A',
+
+                'Thana' => optional(
+                    optional(
+                        optional($transaction->user)->technician
+                    )->thana
+                )->thana ?? 'N/A',
+
+                'District' => optional(
+                    optional(
+                        optional($transaction->user)->technician
+                    )->district
+                )->district ?? 'N/A',
+
+                'Gift' => optional($transaction->gift)->gift_name ?? 'N/A',
+
+                'Point' => optional($transaction->gift)->point_slab ?? 'N/A',
+
+                'Policy' => optional($transaction->policy)->program_name ?? 'N/A',
 
                 'Request Date' => $transaction->requested_at
                     ? \Carbon\Carbon::parse($transaction->requested_at)->format('d M Y')
                     : 'N/A',
 
-                'Request Status' => $statuses[$transaction->request_status] ?? 'Unknown',
+                'Request Status' => isset($statuses[$transaction->request_status])
+                    ? $statuses[$transaction->request_status]
+                    : 'Unknown',
 
-                'Delivery Status' => ucfirst($transaction->delivery_status ?? 'N/A'),
+                'Delivery Status' => $transaction->delivery_status
+                    ? ucfirst($transaction->delivery_status)
+                    : 'N/A',
 
             ];
 

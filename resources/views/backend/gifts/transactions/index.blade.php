@@ -180,14 +180,11 @@
                         @forelse($transactions as $item)
                             <tr>
 
-                                {{-- ID --}}
                                 <td>
                                     <span class="badge badge-dark">#{{ $item->id }}</span>
                                 </td>
 
-                                <td>{{$item->user?->technician?->user_id}}</td>
-
-                                {{-- USER --}}
+                                {{-- <td>{{$item->user?->technician?->user_id}}</td>
                                 <td>
                                     <b>{{ $item->user->name ?? '-' }}</b><br>
                                     <small>{{ $item->user->email ?? '-' }}</small><br>
@@ -206,7 +203,47 @@
                                 </td>
                                 <td>{{$item->user?->technician?->point_name}}</td>
                                 <td>{{$item->user?->technician?->thana?->thana}}</td>
-                                <td>{{$item->user?->technician?->district?->district}}</td>
+                                <td>{{$item->user?->technician?->district?->district}}</td> --}}
+
+                                <td>
+                                    {{ optional(optional($item->user)->technician)->user_id ?? '-' }}
+                                </td>
+
+                                {{-- USER --}}
+                                <td>
+                                    <b>{{ optional($item->user)->name ?? '-' }}</b><br>
+                                    <small>{{ optional($item->user)->email ?? '-' }}</small><br>
+                                    <small>{{ optional($item->user)->phone ?? '-' }}</small>
+                                </td>
+
+                                <td>
+                                    {{ optional(optional($item->user)->technician)->gatway_number ?? '-' }}
+                                </td>
+
+                                <td>
+                                    @if (optional(optional($item->user)->technician)->payment_gateway == 1)
+                                        <span class="badge badge-secondary">BKash</span>
+                                    @elseif (optional(optional($item->user)->technician)->payment_gateway == 2)
+                                        <span class="badge badge-secondary">Nagad</span>
+                                    @elseif (optional(optional($item->user)->technician)->payment_gateway == 3)
+                                        <span class="badge badge-secondary">Rocket</span>
+                                    @else
+                                        <span class="badge badge-secondary">-</span>
+                                    @endif
+                                </td>
+
+                                <td>
+                                    {{ optional(optional($item->user)->technician)->point_name ?? '-' }}
+                                </td>
+
+                                <td>
+                                    {{ optional(optional(optional($item->user)->technician)->thana)->thana ?? '-' }}
+                                </td>
+
+                                <td>
+                                    {{ optional(optional(optional($item->user)->technician)->district)->district ?? '-' }}
+                                </td>                         
+
 
                                 {{-- GIFT --}}
                                 <td>
