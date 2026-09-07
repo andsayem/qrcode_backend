@@ -7,6 +7,7 @@ use App\Repositories\CodeUploader;
 use Illuminate\Http\Request;
 use App\Models\SSGCodeDetail;
 use App\Models\CodeDetail;
+use App\Models\CodeVerifyLog;
 use App\Models\RequestCode;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -83,6 +84,24 @@ class SSGCodeController extends Controller
 
         return $query;
     }
+    public function scanLogs($id, Request $request)
+    {
+        abort_unless(auth()->user()->can('request-code-list'), 403);
+
+        $ssgcode = SSGCodeDetail::with('product:id,sku,product_name')->findOrFail($id);
+
+        $logs = CodeVerifyLog::with('product:id,sku,product_name')
+            ->where('code_id', $ssgcode->id)
+            ->orWhere('code', $ssgcode->code)
+            ->orderByDesc('id')
+            ->paginate(20);
+
+        return view('backend.ssgcode.scan-logs', [
+            'ssgcode' => $ssgcode,
+            'logs' => $logs,
+        ]);
+    }
+
     public function verifiedProduct(Request $request)
     {
         abort_unless(auth()->user()->can('request-code-list'), 403);

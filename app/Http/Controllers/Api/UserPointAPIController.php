@@ -161,10 +161,14 @@ public function getHeroesOfPreviousMonth()
                     $codeVerifyLog->product_id = $ssgCodeDetail->product_id ?? null;
                    // $codeVerifyLog->mobile_no = $user_data->phone_number ? $user_data->phone_number : $user_data->email;
                     $codeVerifyLog->code = $request->code ?? null;
+                    $codeVerifyLog->code_id = $ssgCodeDetail->id ?? null;
                     $codeVerifyLog->requested_ip = $request->ip() ?? null;
                     $codeVerifyLog->status = $status ?? null;
-                    $codeVerifyLog->save(); 
-                    return response()->json(['status' => 2 ,'message' => 'Alert! This code has already been scanned/checked by +8801xxxxxxx'.substr($ssgCodeDetail->mobile, - 3).'. If it is not you please contact with your seller'], 200); 
+                    $codeVerifyLog->lat = $request->lat ?? null;
+                    $codeVerifyLog->long = $request->long ?? null;
+                    $codeVerifyLog->address = $request->address ?? null;
+                    $codeVerifyLog->save();
+                    return response()->json(['status' => 2 ,'message' => 'Alert! This code has already been scanned/checked by +8801xxxxxxx'.substr($ssgCodeDetail->mobile, - 3).'. If it is not you please contact with your seller'], 200);
                 } 
                 return response()->json(['status' => 1 ,'message' => 'Verified! This is an original product from Super Star Group (SSG). Thank you for choosing us.'], 200); 
             }else{
@@ -198,11 +202,15 @@ public function getHeroesOfPreviousMonth()
                     $codeVerifyLog->product_id = $ssgCodeDetail->product_id ?? null;
                     $codeVerifyLog->mobile_no = $user_data->phone_number ? $user_data->phone_number : $user_data->email;
                     $codeVerifyLog->code = $request->code ?? null;
+                    $codeVerifyLog->code_id = $ssgCodeDetail->id ?? null;
                     $codeVerifyLog->requested_ip = $request->ip() ?? null;
                     $codeVerifyLog->status = $status ?? null;
+                    $codeVerifyLog->lat = $request->lat ?? null;
+                    $codeVerifyLog->long = $request->long ?? null;
+                    $codeVerifyLog->address = $request->address ?? null;
                     $codeVerifyLog->save();
 
-                    return response()->json(['status' => 2 ,'message' => 'Alert! This code has already been scanned/checked by +8801xxxxxxx'.substr($ssgCodeDetail->mobile, - 3).'. If it is not you please contact with your seller'], 200); 
+                    return response()->json(['status' => 2 ,'message' => 'Alert! This code has already been scanned/checked by +8801xxxxxxx'.substr($ssgCodeDetail->mobile, - 3).'. If it is not you please contact with your seller'], 200);
                 }
 
                 if ($ssgCodeDetail) {
@@ -241,8 +249,12 @@ public function getHeroesOfPreviousMonth()
                     $codeVerifyLog->product_id = $ssgCodeDetail->product_id ?? null;
                     $codeVerifyLog->mobile_no = $user_data->phone_number ? $user_data->phone_number : $user_data->email;
                     $codeVerifyLog->code = $request->code ?? null;
+                    $codeVerifyLog->code_id = $ssgCodeDetail->id ?? null;
                     $codeVerifyLog->requested_ip = $request->ip() ?? null;
                     $codeVerifyLog->status = $status ?? null;
+                    $codeVerifyLog->lat = $request->lat ?? null;
+                    $codeVerifyLog->long = $request->long ?? null;
+                    $codeVerifyLog->address = $request->address ?? null;
                     $codeVerifyLog->save();
                     $this->campaignsCheck($ssgCodeDetail);
                     return response()->json(['status' => 1 ,'message' => 'Verified! This is an original product from Super Star Group (SSG). Thank you for choosing us.'], 200); 
@@ -253,10 +265,14 @@ public function getHeroesOfPreviousMonth()
                     $codeVerifyLog->product_id = $ssgCodeDetail->product_id ?? null;
                     $codeVerifyLog->mobile_no = $user_data->phone_number ? $user_data->phone_number : $user_data->email ;
                     $codeVerifyLog->code = $request->code ?? null;
+                    $codeVerifyLog->code_id = $ssgCodeDetail->id ?? null;
                     $codeVerifyLog->requested_ip = $request->ip() ?? null;
                     $codeVerifyLog->status = $status ?? null;
+                    $codeVerifyLog->lat = $request->lat ?? null;
+                    $codeVerifyLog->long = $request->long ?? null;
+                    $codeVerifyLog->address = $request->address ?? null;
                     $codeVerifyLog->save();
-                    return response()->json(['status' => 0 ,'message' => 'This code is invalid. Please enter the right code or contact with seller.'], 200); 
+                    return response()->json(['status' => 0 ,'message' => 'This code is invalid. Please enter the right code or contact with seller.'], 200);
                     //return $this->sendResponse( 0 , 'This code is invalid. Please enter the right code or contact with seller.');
                 } 
             }else{
@@ -317,8 +333,12 @@ public function getHeroesOfPreviousMonth()
         $codeVerifyLog->product_id = $ssgCodeDetail->product_id ?? null;
         $codeVerifyLog->mobile_no = $request->mobile ?? null;
         $codeVerifyLog->code = $request->code ?? null;
+        $codeVerifyLog->code_id = $ssgCodeDetail->id ?? null;
         $codeVerifyLog->requested_ip = $request->ip() ?? null;
         $codeVerifyLog->status = $status ?? null;
+        $codeVerifyLog->lat = $request->lat ?? null;
+        $codeVerifyLog->long = $request->long ?? null;
+        $codeVerifyLog->address = $request->address ?? null;
         $codeVerifyLog->save();
     }
     public function getPoint($ssgCodeDetail){

@@ -85,7 +85,7 @@ class GiftTransactionsExport implements FromCollection, WithHeadings
                 'User Name' => $transaction->user->name ?? 'N/A',
 
                 'Gift' => $transaction->gift->gift_name ?? 'N/A',
-
+                'Point' => $transaction->gift->point_slab ?? 'N/A',
                 'Policy' => $transaction->policy->program_name ?? 'N/A',
 
                 'Request Date' => $transaction->requested_at
@@ -108,6 +108,7 @@ class GiftTransactionsExport implements FromCollection, WithHeadings
             'ID',
             'User Name',
             'Gift',
+            'Point',
             'Policy',
             'Request Date',
             'Request Status',

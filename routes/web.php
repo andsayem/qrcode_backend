@@ -154,6 +154,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::get('/code_generation', [RequestCodeController::class, 'code_generation'])->name('code_generation');
     Route::get('/download_codes/{id}', [RequestCodeController::class, 'download_codes'])->name('download_codes');
     Route::resource('ssgcodes', SSGCodeController::class, ['names' => 'admin.ssgcodes']);
+    Route::get('/ssgcodes/{id}/scan-logs', [SSGCodeController::class, 'scanLogs'])->name('admin.ssgcodes.scan-logs');
     Route::get('verified-product', [SSGCodeController::class, 'verifiedProduct'])->name('admin.verified-product');
     Route::resource('reports', ReportController::class, ['names' => 'admin.reports']);
     Route::get('code-sample-file-download', [\App\Http\Controllers\Backend\SSGCodeController::class, 'codeSampleFile'])->name('code-sample-file.download');
