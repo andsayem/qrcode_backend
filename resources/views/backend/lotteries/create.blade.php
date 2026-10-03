@@ -35,6 +35,11 @@
             </div>
 
             <div class="form-group">
+                <label>Draw Date</label>
+                <input type="date" name="draw_date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
                 <label>Required Points</label>
                 <input type="number" name="required_points" class="form-control" required>
             </div>

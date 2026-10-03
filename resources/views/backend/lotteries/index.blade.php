@@ -56,7 +56,9 @@
                         <th>Title</th>
                         <th>From Date</th>
                         <th>To Date</th>
+                        <th>Draw Date</th>
                         <th>Required Points</th>
+                        <th>Eligible Technicians</th>
                         <th>Total Winners</th>
                         <th>Status</th>
                         <th>Current Position</th>
@@ -77,7 +79,33 @@
 
                         <td>{{ $lottery->to_date }}</td>
 
+                        <td>
+                            @if($lottery->draw_date)
+                                {{ $lottery->draw_date->format('Y-m-d') }}
+                                <br>
+                                @php $daysLeft = $lottery->daysUntilDraw(); @endphp
+                                @if($lottery->status == 'completed')
+                                    <small class="badge badge-success">Drawn</small>
+                                @elseif($daysLeft > 0)
+                                    <small class="badge badge-info">{{ $daysLeft }} {{ $daysLeft == 1 ? 'day' : 'days' }} left</small>
+                                @elseif($daysLeft == 0)
+                                    <small class="badge badge-warning">Today</small>
+                                @else
+                                    <small class="badge badge-danger">{{ abs($daysLeft) }} {{ abs($daysLeft) == 1 ? 'day' : 'days' }} overdue</small>
+                                @endif
+                            @else
+                                N/A
+                            @endif
+                        </td>
+
                         <td>{{ $lottery->required_points }}</td>
+
+                        <td>
+                            <a href="{{ route('admin.lotteries.eligible', $lottery->id) }}"
+                                class="badge badge-success" title="View eligible technicians">
+                                {{ $lottery->eligibleUsersCount() }} <i class="fa fa-eye"></i>
+                            </a>
+                        </td>
 
                         <!-- NEW FIELD -->
                         <td>
@@ -146,7 +174,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="text-center">No data found</td>
+                        <td colspan="12" class="text-center">No data found</td>
                     </tr>
                     @endforelse
 

@@ -17,8 +17,8 @@ use App\Http\Controllers\Backend\Lottery\LotteryWinnerController;
 |
 */
 
-// Parent group in web.php already handles 'auth' and 'admin' prefix
-Route::group(['as' => 'admin.'], function () {
+// Loaded at the end of web.php outside its auth group, so auth is applied here
+Route::group(['as' => 'admin.', 'middleware' => 'auth'], function () {
 
     // Lottery Gifts
     Route::resource('lottery-gifts', LotteryGiftController::class);
@@ -47,11 +47,22 @@ Route::group(['as' => 'admin.'], function () {
         ->only(['index', 'show', 'destroy'])
         ->parameters(['lottery-winners' => 'winner']);
 
+    // Eligible technicians list and Excel export
+    Route::get('lotteries/{lottery}/eligible', [LotteryController::class, 'eligible'])
+        ->name('lotteries.eligible');
+
+    Route::get('lotteries/{lottery}/eligible/export', [LotteryController::class, 'eligibleExport'])
+        ->name('lotteries.eligible.export');
+
     // Draw page (GET)
     Route::get('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
         ->name('lotteries.draw');
 
-    // Draw next winner (POST and GET - as per original web.php)
-    Route::match(['get', 'post'], 'lotteries/{lottery}/draw-next', [LotteryController::class, 'drawNext'])
+    // Start lottery (pending -> running)
+    Route::post('lotteries/{lottery}/start', [LotteryController::class, 'start'])
+        ->name('lotteries.start');
+
+    // Draw next winner (POST only, so a refresh or link cannot trigger a draw)
+    Route::post('lotteries/{lottery}/draw-next', [LotteryController::class, 'drawNext'])
         ->name('lotteries.draw-next');
 });

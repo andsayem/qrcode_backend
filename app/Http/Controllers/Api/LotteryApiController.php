@@ -40,6 +40,7 @@ class LotteryApiController extends Controller
             }
 
             $winnersCount = $lottery->winners->count();
+            $areas = $this->winnerAreas($lottery->winners->pluck('user_id'));
             $currentPos = $lottery->current_position ?? 0;
             $total = $lottery->total_winners;
 
@@ -53,13 +54,17 @@ class LotteryApiController extends Controller
 
             $pollInterval = ($status === 'live') ? 4000 : 30000;
 
+            // The DB column holds how many winners are drawn, but the app expects the
+            // position being drawn now. Draws run in reverse (last position first).
+            $drawingPosition = $currentPos < $total ? $total - $currentPos : 0;
+
             return [
                 'id' => $lottery->id,
                 'title' => $lottery->title,
                 'status' => $status,
                 'total_winners' => $total,
                 'winners_count' => $winnersCount,
-                'current_position' => $currentPos,
+                'current_position' => $drawingPosition,
                 'poll_interval_ms' => $pollInterval,
                 'gifts' => $lottery->giftAssignments->sortBy('position')->values()->map(function ($ga) {
                     return [
@@ -70,14 +75,14 @@ class LotteryApiController extends Controller
                             : null,
                     ];
                 }),
-                'winners' => $lottery->winners->sortBy('position')->values()->map(function ($winner) {
+                'winners' => $lottery->winners->sortBy('position')->values()->map(function ($winner) use ($areas) {
                     $mobile = $winner->mobile_no ?: ($winner->user->phone_number ?? $winner->user->email ?? 'N/A');
-                    $masked = (strlen($mobile) >= 6) ? substr($mobile, 0, 3) . '****' . substr($mobile, -3) : $mobile;
 
                     return [
                         'user_id' => $winner->user_id,
                         'name' => $winner->winner_name,
-                        'mobile' => $masked,
+                        'mobile' => $mobile,
+                        'area' => $areas->get($winner->user_id),
                         'position' => $winner->position,
                         'position_label' => $this->ordinal($winner->position) . ' Place',
                         'gift_name' => $winner->giftAssign->gift->gift_name ?? 'N/A',
@@ -89,6 +94,50 @@ class LotteryApiController extends Controller
         if (!$data) {
             return response()->json(['data' => null, 'message' => 'No active lottery at the moment.']);
         }
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
+     * GET /api/lotteries/upcoming
+     * Lotteries that are not drawn yet, with draw date, eligible count and gifts.
+     */
+    public function upcoming()
+    {
+        // Eligible count is a heavy aggregate, so cache the whole list briefly
+        $data = Cache::remember('lottery_upcoming', 60, function () {
+            return Lottery::with('giftAssignments.gift')
+                ->where('status', '!=', 'completed')
+                ->where(function ($q) {
+                    $q->whereNull('current_position')->orWhere('current_position', 0);
+                })
+                ->orderByRaw('draw_date IS NULL, draw_date ASC')
+                ->get()
+                ->map(function ($lottery) {
+                    return [
+                        'id' => $lottery->id,
+                        'title' => $lottery->title,
+                        'from_date' => $lottery->from_date->format('Y-m-d'),
+                        'to_date' => $lottery->to_date->format('Y-m-d'),
+                        'draw_date' => optional($lottery->draw_date)->format('Y-m-d'),
+                        'days_left' => $lottery->daysUntilDraw(),
+                        'required_points' => $lottery->required_points,
+                        'total_winners' => $lottery->total_winners,
+                        'eligible_count' => $lottery->eligibleUsersCount(),
+                        'gifts' => $lottery->giftAssignments->sortBy('position')->values()->map(function ($ga) {
+                            return [
+                                'position' => $ga->position,
+                                'position_label' => $this->ordinal($ga->position) . ' Place',
+                                'gift_name' => $ga->gift->gift_name ?? 'N/A',
+                                'gift_image' => ($ga->gift && $ga->gift->gift_image)
+                                    ? asset('uploads/lottery_gifts/' . $ga->gift->gift_image)
+                                    : null,
+                            ];
+                        }),
+                    ];
+                })
+                ->values();
+        });
 
         return response()->json(['data' => $data]);
     }
@@ -124,6 +173,8 @@ class LotteryApiController extends Controller
                 ->orderBy('position', 'asc')
                 ->get();
 
+            $areas = $this->winnerAreas($winners->pluck('user_id'));
+
             return response()->json([
                 'status' => 'success',
 
@@ -139,21 +190,18 @@ class LotteryApiController extends Controller
 
                 // Lower section — winner list table
                 // Columns: SL | User ID | Winner Name | Mobile No | Gift | Winning Position
-                'winner_list' => $winners->values()->map(function ($winner, $index) {
+                'winner_list' => $winners->values()->map(function ($winner, $index) use ($areas) {
                     $mobile = $winner->mobile_no
                         ?: ($winner->user->phone_number
                             ?? $winner->user->email
                             ?? 'N/A');
 
-                    $masked = (strlen($mobile) >= 6)
-                        ? substr($mobile, 0, 3) . '****' . substr($mobile, -3)
-                        : $mobile;
-
                     return [
                         'sl'               => $index + 1,                        // row number
                         'user_id'          => $winner->user_id,
                         'winner_name'      => $winner->winner_name,
-                        'mobile_no'        => $masked,
+                        'mobile_no'        => $mobile,
+                        'area'             => $areas->get($winner->user_id),
                         'gift'             => $winner->giftAssign->gift->gift_name ?? 'N/A',
                         'winning_position' => $winner->position,
                         'position_label'   => $this->ordinal($winner->position) . ' place',
@@ -205,6 +253,28 @@ class LotteryApiController extends Controller
     }
 
 
+
+    /**
+     * "Thana, District" per user, from the technician profile.
+     */
+    private function winnerAreas($userIds)
+    {
+        if ($userIds->isEmpty()) {
+            return collect();
+        }
+
+        return DB::table('technicians')
+            ->leftJoin('geo_district', 'geo_district.id', '=', 'technicians.district_id')
+            ->leftJoin('geo_thana', 'geo_thana.id', '=', 'technicians.upazilla_id')
+            ->whereIn('technicians.user_id', $userIds->unique()->values())
+            ->select('technicians.user_id', 'geo_district.district', 'geo_thana.thana')
+            ->get()
+            ->mapWithKeys(function ($row) {
+                $area = collect([$row->thana, $row->district])->filter()->implode(', ');
+
+                return [$row->user_id => $area ?: null];
+            });
+    }
 
     private function ordinal($n)
     {

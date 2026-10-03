@@ -44,6 +44,12 @@
             </div>
 
             <div class="form-group">
+                <label>Draw Date</label>
+                <input type="date" name="draw_date" class="form-control"
+                    value="{{ optional($lottery->draw_date)->format('Y-m-d') }}" required>
+            </div>
+
+            <div class="form-group">
                 <label>Required Points</label>
                 <input type="number" name="required_points" class="form-control"
                     value="{{ $lottery->required_points }}" required>

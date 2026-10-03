@@ -124,4 +124,6 @@ Route::prefix('lotteries')->group(function () {
     Route::get('currentLottery', [LotteryApiController::class, 'current']);
     // GET /api/lotteries/history - For viewing past results
     Route::get('lotteryHistory', [LotteryApiController::class, 'history']);
+    // GET /api/lotteries/upcoming - Lotteries not drawn yet (draw date, eligible count, gifts)
+    Route::get('upcoming', [LotteryApiController::class, 'upcoming']);
 });
