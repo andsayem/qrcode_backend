@@ -21,9 +21,9 @@
 <div class="block-header">
     <div class="row">
         <div class="col-lg-5 col-md-8 col-sm-12">
-            @if($_GET['status']=='1')
+            @if(request('status')=='1')
                 <h2>Approved Technician</h2>
-            @elseif($_GET['status']=='0')
+            @elseif(request('status')=='0')
             <h2>Pending Technician</h2>
             @endif
         </div>
@@ -179,13 +179,13 @@
             <div class="header">
                 <div class="row align-items-center">
                     <div class="col-lg-5 col-md-8 col-sm-12">
-                        @if($_GET['status']=='1')
+                        @if(request('status')=='1')
                             <h2>Approved Technician List</h2>
                             <span class="badge badge-info fill"> {{ $tableData->total() }}</span>
-                        @elseif($_GET['status']=='0')
+                        @elseif(request('status')=='0')
                         <h2>Pending Technician List</h2>
                         <span class="badge badge-info fill"> {{ $tableData->total() }}</span>
-                        @elseif($_GET['status']=='2')
+                        @elseif(request('status')=='2')
                         <h2>Hold Technician List</h2>
                         <span class="badge badge-info fill"> {{ $tableData->total() }}</span>
                         @endif
@@ -197,7 +197,9 @@
                         </h2>
                     </div> -->
                     <div class="col-lg-6 text-right">
+                        @can('user-create')
                         <a href="{{ route('admin.users.new_technician') }}" class="btn btn-sm px-3 btn-info"><i class="fa fa-plus"></i> <span>Create</span></a>
+                        @endcan
                         @php  
                         $technician_download = 'status='.$get_status.'&name='.$get_name.'&district='.$get_district.'&thana='.$get_thana.'&area='.$get_area.'&from_date='.$get_from_date.'&to_date='.$get_to_date;
                         @endphp

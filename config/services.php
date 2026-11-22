@@ -34,4 +34,13 @@ return [
         'sitekey' => env('RECAPTCHA_SITEKEY'),
         'secret' => env('RECAPTCHA_SECRET'),
     ],
+
+    // External checks used by admin technician registration (same APIs the Apon app calls)
+    'ssforce' => [
+        'url' => rtrim(env('SSFORCE_API_URL', 'https://ssforce.ssgbd.com/api'), '/'),
+    ],
+
+    'hris' => [
+        'validate_mobile_url' => env('HRIS_VALIDATE_MOBILE_URL', 'https://hris.ssgbd.com/backend/public/api/auth/validate-ssg-mobile'),
+    ],
 ];

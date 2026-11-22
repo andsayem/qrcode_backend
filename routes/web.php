@@ -10,6 +10,7 @@ use App\Http\Controllers\Backend\RequestCodeController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SSGCodeController;
 use App\Http\Controllers\Backend\TechnicianController;
+use App\Http\Controllers\Backend\TechnicianRegistrationController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\VendorController;
 use App\Http\Controllers\CampaignController;
@@ -76,7 +77,11 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::resource('users', UserController::class, ['names' => 'admin.users'])->parameters(['users' => 'id']);
 
     Route::resource('technicians', TechnicianController::class, ['names' => 'admin.technicians'])->parameters(['technicians' => 'id']);
-    Route::get('new_technician', [UserController::class, 'new_technician'])->name('admin.users.new_technician');
+    // Admin technician registration (same checks as the Apon app sign-up). Replaces the old UserController@new_technician form.
+    Route::get('new_technician', [TechnicianRegistrationController::class, 'create'])->name('admin.users.new_technician');
+    Route::post('technician-register', [TechnicianRegistrationController::class, 'store'])->name('admin.technician.register');
+    Route::get('technician-register/fo-list', [TechnicianRegistrationController::class, 'foList'])->name('admin.technician.register.fo_list');
+    Route::get('technician-register/fo-check', [TechnicianRegistrationController::class, 'foCheck'])->name('admin.technician.register.fo_check');
     Route::post('store_technician', [UserController::class, 'store_technician'])->name('admin.technician.store_technician');
     Route::get('technician_download', [UserController::class, 'technician_download'])->name('admin.users.technician_download');
     Route::get('technician-user', [UserController::class,  'technicianUser'])->name('admin.users.technician_user');
