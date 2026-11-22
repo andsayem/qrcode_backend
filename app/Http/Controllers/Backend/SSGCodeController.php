@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Backend;
 use App\Repositories\CodeUploader;
 use Illuminate\Http\Request;
 use App\Models\SSGCodeDetail;
+use App\Models\Product;
 use App\Models\CodeDetail;
 use App\Models\CodeVerifyLog;
 use App\Models\RequestCode;
@@ -29,11 +30,34 @@ class SSGCodeController extends Controller
             $ssgcodes->orderByDesc('updated_at')
                 ->orderByDesc('id');
         } else {
-            $ssgcodes->orderByDesc('total_used');
+            // id as tie-breaker keeps page order stable
+            $ssgcodes->orderByDesc('total_used')
+                ->orderByDesc('id');
         }
 
+        $ssgcodes = $ssgcodes->simplePaginate(25)->appends($request->query());
+
+        // Unique attempt count per code: same mobile + IP on the same day counts once
+        $uniqueCounts = [];
+        $codes = $ssgcodes->pluck('code')->filter()->values();
+        if ($codes->isNotEmpty()) {
+            $uniqueCounts = CodeVerifyLog::whereIn('code', $codes)
+                ->groupBy('code')
+                ->select('code', DB::raw("COUNT(DISTINCT COALESCE(mobile_no, ''), COALESCE(requested_ip, ''), DATE(created_at)) as unique_count"))
+                ->pluck('unique_count', 'code')
+                ->toArray();
+        }
+
+        // Product dropdown: "SKU [SAP Code] (Product Name)" — includes inactive products since their codes still exist
+        $products = Product::select(DB::raw('concat(sku, if(sap_code is null or sap_code = "", "", concat(" [", sap_code, "]")), " (", product_name, ")") as label'), 'id')
+            ->orderBy('sku', 'asc')
+            ->pluck('label', 'id')
+            ->toArray();
+
         return view('backend.ssgcode.index', [
-            'ssgcodes' => $ssgcodes->limit(100)->get()
+            'ssgcodes' => $ssgcodes,
+            'products' => $products,
+            'uniqueCounts' => $uniqueCounts,
         ]);
     }
 
@@ -56,9 +80,19 @@ class SSGCodeController extends Controller
                 'updated_at',
             ])
             ->with([
-                'product:id,sku,product_name',
+                'product:id,sku,product_name,sap_code',
                 'uploader:id,name',
             ]);
+
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('sap_code')) {
+            // Resolve matching product ids first (small table) to keep the large code table query index-friendly
+            $productIds = Product::where('sap_code', 'like', '%' . $request->sap_code . '%')->pluck('id');
+            $query->whereIn('product_id', $productIds);
+        }
 
         if ($request->filled('code')) {
             $query->where('code', $request->code);
@@ -90,15 +124,34 @@ class SSGCodeController extends Controller
 
         $ssgcode = SSGCodeDetail::with('product:id,sku,product_name')->findOrFail($id);
 
-        $logs = CodeVerifyLog::with('product:id,sku,product_name')
-            ->where('code_id', $ssgcode->id)
-            ->orWhere('code', $ssgcode->code)
+        // Same mobile + IP on the same day = one attempt; show only the latest row of each group.
+        // (code_id is never populated in code_verify_logs, so match on code only — keeps the code index usable.)
+        $groups = CodeVerifyLog::where('code', $ssgcode->code)
+            ->select(DB::raw('MAX(id) as id'), DB::raw('COUNT(*) as attempts'))
+            ->groupBy(DB::raw("COALESCE(mobile_no, ''), COALESCE(requested_ip, ''), DATE(created_at)"))
             ->orderByDesc('id')
             ->paginate(20);
+
+        $rows = CodeVerifyLog::with('product:id,sku,product_name')
+            ->whereIn('id', $groups->pluck('id'))
+            ->get()
+            ->keyBy('id');
+
+        $attempts = $groups->pluck('attempts', 'id');
+        $logs = $groups->setCollection(
+            $groups->getCollection()->map(function ($g) use ($rows, $attempts) {
+                $log = $rows[$g->id];
+                $log->attempts = $attempts[$g->id];
+                return $log;
+            })
+        );
+
+        $totalAttempts = CodeVerifyLog::where('code', $ssgcode->code)->count();
 
         return view('backend.ssgcode.scan-logs', [
             'ssgcode' => $ssgcode,
             'logs' => $logs,
+            'totalAttempts' => $totalAttempts,
         ]);
     }
 

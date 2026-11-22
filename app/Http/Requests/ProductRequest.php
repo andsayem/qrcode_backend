@@ -20,6 +20,7 @@ class ProductRequest extends FormRequest
             'category_id' => 'required|numeric',
             'channel_id' => 'required|numeric',
             'status' => 'required|numeric',
+            'sap_code' => 'required|string|max:255',
         ];
     }
 
@@ -41,6 +42,8 @@ class ProductRequest extends FormRequest
             'status.required' => 'The category name field is required.',
             'status.numeric' => 'The category name field must be numeric.',
             'sku.max' => 'The sku field max length 2.',
+            'sap_code.required' => 'The SAP code field is required.',
+            'sap_code.max' => 'The SAP code field max length 255.',
         ];
     }
 }

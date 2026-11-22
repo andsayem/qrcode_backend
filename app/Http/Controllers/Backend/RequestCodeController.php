@@ -34,7 +34,7 @@ class RequestCodeController extends Controller
 
         $requestcodes = $this->requestcodeFilterProcess(new Request($request->all()));
         $data['requestcodes'] = $requestcodes->orderBy('id', 'desc')->paginate(25);
-        $data['parentproducts'] = Product::select(DB::raw('concat(sku, " (", product_name, ")") as sku'), 'id')
+        $data['parentproducts'] = Product::select(DB::raw('concat(sku, if(sap_code is null or sap_code = "", "", concat(" [", sap_code, "]")), " (", product_name, ")") as sku'), 'id')
             ->where('status', StatusEnum::Active)
             ->orderBy('sku', 'asc')
             ->pluck('sku', 'id')
@@ -51,7 +51,7 @@ class RequestCodeController extends Controller
             abort(403);
         }
 
-        $data['parentproducts'] = Product::select(DB::raw('concat(sku, " (", product_name, ")") as sku'), 'id')
+        $data['parentproducts'] = Product::select(DB::raw('concat(sku, if(sap_code is null or sap_code = "", "", concat(" [", sap_code, "]")), " (", product_name, ")") as sku'), 'id')
             ->where('status', 1)
             ->orderBy('sku', 'asc')
             ->pluck('sku', 'id')
@@ -846,6 +846,12 @@ class RequestCodeController extends Controller
 
         if (isset($request->vendor_id)) {
             $requestcodes = $requestcodes->where('vendor_id', $request->vendor_id);
+        }
+
+        if (isset($request->sap_code)) {
+            $requestcodes = $requestcodes->whereHas('product', function ($query) use ($request) {
+                $query->where('sap_code', 'like', '%' . $request->sap_code . '%');
+            });
         }
 
         if (isset($request->status)) {

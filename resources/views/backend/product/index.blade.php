@@ -31,29 +31,42 @@
                 <div class="body pt-0">
                     {{Form::open(['method' => 'get'])}}
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="category_id" class="mb-2">Category</label>
                                 {!! Form::select('category_id', ['' => 'Select Category'] + $parentcategories, request('category_id'), ['id' => 'category_id', 'class' => 'form-control select2']) !!}
                             </div>
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="product_name" class="mb-2">Product Name</label>
                                 {!! Form::text('product_name', request('product_name') ?? '', ['class' => 'form-control ', 'autocomplete' => 'off', 'placeholder' => 'Product Name'])!!}
                             </div>
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="sku" class="mb-2">SKU</label>
                                 {!! Form::text('sku', request('sku') ?? '', ['class' => 'form-control ', 'autocomplete' => 'off', 'placeholder' => 'SKU'])!!}
                             </div>
                         </div>
 
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="sap_code" class="mb-2">SAP Code</label>
+                                {!! Form::text('sap_code', request('sap_code') ?? '', ['class' => 'form-control ', 'autocomplete' => 'off', 'placeholder' => 'SAP Code'])!!}
+                            </div>
+                        </div>
 
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="status" class="mb-2">Status</label>
+                                {!! Form::select('status', ['' => 'All Status', App\Utilities\Enum\StatusEnum::Active => 'Active', App\Utilities\Enum\StatusEnum::Inactive => 'Inactive'], request('status'), ['id' => 'status', 'class' => 'form-control']) !!}
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>&nbsp</label>
                                 <div>
@@ -107,9 +120,10 @@
                             <th>Product</th>
                             <th>Category</th>
                             <th>SKU</th>
+                            <th>SAP Code</th>
                             <th>Status</th>
                             <th>Description</th>
-                            <th>Point</th>
+                            <th class="text-right">Point</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -120,11 +134,12 @@
                                     <td>{{$product->product_name}}</td>
                                     <td>{{ $product->category->category_name ?? '' }}</td>
                                     <td>{{$product->sku}}</td>
+                                    <td>{{$product->sap_code}}</td>
                                     <td>
                                         @include('includes.status', ['status' => [['key' => 'Active', 'value' => 1, 'class' => 'badge-success'], ['key' => 'Inactive', 'value' => 0, 'class' => 'badge-danger']], 'selected' => $product->status])
                                     </td>
                                     <td>{{$product->desc}}</td>
-                                    <td>{{$product->point_slab}}</td>
+                                    <td class="text-right">{{ number_format((float) $product->point_slab, 2) }}</td>
                                     <td>
                                         @can('product-edit')
                                             <a href="{{ route('admin.products.edit', $product->id) }}" type="button"

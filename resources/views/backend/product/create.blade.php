@@ -98,6 +98,16 @@
 
 
                     <div class="col-md-6">
+                        <div class="form-group row required">
+                            <label class="col-sm-4 col-form-label control-label">SAP Code</label>
+                            <div class="col-sm-8">
+                                {{Form::text('sap_code', null, ['class' => 'form-control', 'placeholder'=>'SAP Code'])}}
+                                @include('/includes/validationmessages', ['field_name'=>'sap_code'])
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
                         <div class="form-group row ">
                             <label class="col-sm-4 col-form-label control-label">Description</label>
                             <div class="col-sm-8">

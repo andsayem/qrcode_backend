@@ -26,8 +26,13 @@
     <div class="header">
         <h2>
             {{ $ssgcode->product->sku ?? '' }} ({{ $ssgcode->product->product_name ?? '' }})
-            &mdash; {{ $ssgcode->code }}
+            &mdash; {{ substr_replace($ssgcode->code, '********', 3, 8) }}
         </h2>
+        <small class="text-muted">
+            Unique attempts: <strong>{{ $logs->total() }}</strong>
+            &nbsp;|&nbsp; Total scans: <strong>{{ $totalAttempts }}</strong>
+            &nbsp;(same mobile + IP on the same day counted once; latest attempt shown)
+        </small>
     </div>
     <div class="body pt-0">
         <div class="table-responsive">
@@ -42,6 +47,7 @@
                         <th>Lat - Long</th>
                         <th>IP</th>
                         <th>Checked At</th>
+                        <th class="text-center">Attempts</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,10 +81,17 @@
                         </td>
                         <td>{{ $log->requested_ip }}</td>
                         <td>{{ optional($log->created_at)->format('d-m-Y h:i A') }}</td>
+                        <td class="text-center">
+                            @if($log->attempts > 1)
+                                <span class="badge badge-warning">{{ $log->attempts }}</span>
+                            @else
+                                {{ $log->attempts }}
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center text-danger">
+                        <td colspan="9" class="text-center text-danger">
                             No scan history found for this code
                         </td>
                     </tr>
@@ -90,7 +103,7 @@
         @if($logs->hasPages())
         <nav class="d-flex justify-content-between align-items-center mt-3">
             <span class="text-muted">
-                Showing {{ $logs->firstItem() }} &ndash; {{ $logs->lastItem() }} of {{ $logs->total() }} entries
+                Showing {{ $logs->firstItem() }} &ndash; {{ $logs->lastItem() }} of {{ $logs->total() }} unique attempts
             </span>
             <div>{{ $logs->links() }}</div>
         </nav>

@@ -42,15 +42,21 @@ $cg_keys_values =  App\Utilities\Enum\RequestCodeStatusEnum::getKeysValues();
                             {!! Form::select('product_id', ['' => 'Select Product SKU']+ $parentproducts, request('product_id'), ['id' =>'product_id','class' => 'form-control select2']) !!}
                         </div>
                     </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="sap_code" class="mb-2">SAP Code</label>
+                            {!! Form::text('sap_code', request('sap_code') ?? '', ['class' => 'form-control', 'autocomplete' => 'off', 'placeholder' => 'SAP Code']) !!}
+                        </div>
+                    </div>
                     @if(auth()->user()->getRoleNames()[0] === 'Super Admin')
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label for="vendor_id" class="mb-2">Vendor</label>
                             {!! Form::select('vendor_id', ['' => 'Select Vendor']+ $parentvendors, request('vendor_id'), ['id' =>'vendor_id','class' => 'form-control select2']) !!}
                         </div>
                     </div>
                     @endif
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label class="mb-2">Status</label>
                             {!! Form::select('status', ['' => 'Select Status'] + $cg_keys_values, null, ['class' => 'form-control select2']) !!}
@@ -110,6 +116,7 @@ $cg_keys_values =  App\Utilities\Enum\RequestCodeStatusEnum::getKeysValues();
                     <tr>
                         <th>Date</th>
                         <th>Product SKU</th>
+                        <th>SAP Code</th>
                         <th>Code Length</th>
                         <th>Total No. of Code</th>
                         <th>Total Complete</th>
@@ -134,6 +141,7 @@ $cg_keys_values =  App\Utilities\Enum\RequestCodeStatusEnum::getKeysValues();
                                         ' ('.($requestcode->product->product_name ?? '').')'
                                     }}
                         </td>
+                        <td>{{ $requestcode->product->sap_code ?? '' }}</td>
                         <td>{{ $requestcode->code_length }}</td>
                         <td>{{ $requestcode->total_no_of_code }}</td>
                         <td>{{ $requestcode->total_complete }}</td>

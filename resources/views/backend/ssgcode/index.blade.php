@@ -38,37 +38,50 @@ $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
                 {{Form::open(['method' => 'get'])}}
                 <div class="row">
 
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="product_id" class="mb-2">Product</label>
+                            {!! Form::select('product_id', ['' => 'Select Product'] + $products, request('product_id'), ['id' => 'product_id', 'class' => 'form-control select2']) !!}
+                        </div>
+                    </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label for="code" class="mb-2">Code</label>
                             {!! Form::text('code', request('code') ?? '',['class'=>'form-control ', 'placeholder'=>'Code'])!!}
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label for="serial" class="mb-2">Serial</label>
                             {!! Form::text('serial', request('serial') ?? '',['class'=>'form-control ', 'placeholder'=>'Serial'])!!}
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label for="mobile" class="mb-2">Mobile</label>
                             {!! Form::text('mobile', request('mobile') ?? '',['class'=>'form-control', 'placeholder'=>'Mobile'])!!}
                         </div>
                     </div>
 
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="sap_code" class="mb-2">SAP Code</label>
+                            {!! Form::text('sap_code', request('sap_code') ?? '',['class'=>'form-control', 'autocomplete' => 'off', 'placeholder'=>'SAP Code'])!!}
+                        </div>
+                    </div>
 
-                    <div class="col-md-3">
+
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label class="mb-2">Status</label>
                             {!! Form::select('status', ['' => 'Select Status'] + $scs_keys_values, request('status'), ['class' => 'form-control select2']) !!}
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>&nbsp</label>
                             <div>
@@ -105,6 +118,7 @@ $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
                 <thead>
                     <tr>
                         <th>Product SKU</th>
+                        <th>SAP Code</th>
                         <th>Serial</th>
                         <th>Code</th>
                         <th>Status</th>
@@ -125,6 +139,8 @@ $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
                             ({{ $ssgcode->product->product_name ?? '' }})
                         </td>
 
+                        <td>{{ $ssgcode->product->sap_code ?? '' }}</td>
+
                         <td>{{ $ssgcode->serial }}</td>
 
                         <td>{{ substr_replace($ssgcode->code,'********',3,8) }}</td>
@@ -140,7 +156,9 @@ $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
                         </td>
 
                         <td>
-                            <a href="{{ route('admin.ssgcodes.scan-logs', $ssgcode->id) }}">{{ $ssgcode->total_used }}</a>
+                            {{-- Unique attempts: same mobile + IP on the same day counts once. Raw count in tooltip. --}}
+                            <a href="{{ route('admin.ssgcodes.scan-logs', $ssgcode->id) }}" target="_blank" rel="noopener"
+                                title="Raw scan count: {{ $ssgcode->total_used }}">{{ $uniqueCounts[$ssgcode->code] ?? $ssgcode->total_used }}</a>
                         </td>
 
                         <td>{{ $ssgcode->uploader->name ?? '' }}</td>
@@ -157,7 +175,7 @@ $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="11" class="text-center text-danger">
+                        <td colspan="12" class="text-center text-danger">
                             No Data Found
                         </td>
                     </tr>
@@ -166,6 +184,23 @@ $scs_keys_values =  App\Utilities\Enum\SSGCodeStatusEnum::getKeysValues();
             </table>
 
         </div>
+
+        {{-- Simple pagination (no total count — counting 13M rows is too slow) --}}
+        <nav class="d-flex justify-content-between align-items-center mt-3">
+            <span class="text-muted">
+                @if($ssgcodes->count())
+                    Showing {{ $ssgcodes->firstItem() }} &ndash; {{ $ssgcodes->lastItem() }}
+                @endif
+            </span>
+            <ul class="pagination mb-0">
+                <li class="page-item {{ $ssgcodes->onFirstPage() ? 'disabled' : '' }}">
+                    <a class="page-link" href="{{ $ssgcodes->previousPageUrl() ?? '#' }}">&laquo; Previous</a>
+                </li>
+                <li class="page-item {{ $ssgcodes->hasMorePages() ? '' : 'disabled' }}">
+                    <a class="page-link" href="{{ $ssgcodes->nextPageUrl() ?? '#' }}">Next &raquo;</a>
+                </li>
+            </ul>
+        </nav>
 
 
     </div>

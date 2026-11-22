@@ -20,8 +20,12 @@ class ProductController extends Controller
         if (!auth()->user()->can('product-list')) {
             abort(403);
         }
+        // Default to Active products; "All Status" sends an empty status and shows everything
+        if (!$request->has('status')) {
+            $request->merge(['status' => StatusEnum::Active]);
+        }
         $products = $this->productFilterProcess(new Request($request->all()));
-        $data['products'] = $products->orderBy('id', 'desc')->paginate(10);
+        $data['products'] = $products->orderBy('id', 'desc')->paginate(25);
         $data['parentcategories'] = Category::orderBy('category_name', 'asc')
             ->where('status', StatusEnum::Active)
             ->pluck('category_name', 'id')
@@ -130,6 +134,12 @@ class ProductController extends Controller
         }
         if (isset($request->sku)) {
             $products = $products->where('sku', 'like', '%' . $request->sku . '%');
+        }
+        if ($request->filled('status')) {
+            $products = $products->where('status', $request->status);
+        }
+        if (isset($request->sap_code)) {
+            $products = $products->where('sap_code', 'like', '%' . $request->sap_code . '%');
         }
 
         return $products;
