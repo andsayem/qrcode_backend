@@ -102,7 +102,7 @@
                     @can('product-create')
                         <a href="{{ route('admin.products.create') }}" class="btn btn-sm px-3 btn-info"><i
                                 class="fa fa-plus"></i> <span>Create</span></a>
-                        <a href="{{ route('admin.products.download') }}" class="btn btn-sm px-3 btn-info">
+                        <a href="{{ route('admin.products.download', request()->except('page')) }}" class="btn btn-sm px-3 btn-info">
                             <i class="fa fa-download"></i>
                             <span>Download</span>
                         </a>

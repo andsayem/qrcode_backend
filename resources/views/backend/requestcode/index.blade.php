@@ -59,7 +59,7 @@ $cg_keys_values =  App\Utilities\Enum\RequestCodeStatusEnum::getKeysValues();
                     <div class="col-md-2">
                         <div class="form-group">
                             <label class="mb-2">Status</label>
-                            {!! Form::select('status', ['' => 'Select Status'] + $cg_keys_values, null, ['class' => 'form-control select2']) !!}
+                            {!! Form::select('status', ['' => 'Select Status'] + $cg_keys_values, request('status'), ['class' => 'form-control select2']) !!}
                         </div>
                     </div>
 

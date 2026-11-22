@@ -103,18 +103,20 @@ class ProductController extends Controller
 
         while (($row = fgetcsv($file)) !== false) { 
             $productId = $row[0] ?? null; // ID column
-            $sap_code = $row[5] ?? null; // Sap Code column
+            $sap_code = trim($row[5] ?? ''); // Sap Code column
             $point = isset($row[6]) ? floatval($row[6]) : 0.0;
 
             if (!$productId ) {
                 continue;
             }
 
-            $updated += Product::where('id', $productId)
-                ->update([
-                    'point_slab' => $point,
-                    'sap_code' => $sap_code,
-                ]);
+            $data = ['point_slab' => $point];
+            // Blank SAP Code in the CSV keeps the existing value instead of wiping it
+            if ($sap_code !== '') {
+                $data['sap_code'] = $sap_code;
+            }
+
+            $updated += Product::where('id', $productId)->update($data);
         }
 
         fclose($file);
